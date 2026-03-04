@@ -9,6 +9,7 @@ export async function respondToQuoteAction(formData: FormData) {
   const user = await requireUser()
   const quoteId = getFormString(formData, "quote_id")
   const decision = getFormString(formData, "decision")
+  const requestId = getFormString(formData, "request_id")
 
   if (!quoteId || !["accepted", "refused"].includes(decision)) {
     return
@@ -27,4 +28,7 @@ export async function respondToQuoteAction(formData: FormData) {
 
   revalidatePath("/app/documents")
   revalidatePath("/app/demandes")
+  if (requestId) {
+    revalidatePath(`/app/demandes/${requestId}`)
+  }
 }

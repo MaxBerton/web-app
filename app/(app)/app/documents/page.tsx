@@ -68,6 +68,7 @@ export default async function DocumentsPage() {
                     <>
                       <form action={respondToQuoteAction}>
                         <input type="hidden" name="quote_id" value={quote.id} />
+                        <input type="hidden" name="request_id" value={quote.request_id} />
                         <input type="hidden" name="decision" value="accepted" />
                         <button className="btn" type="submit">
                           Accepter
@@ -75,6 +76,7 @@ export default async function DocumentsPage() {
                       </form>
                       <form action={respondToQuoteAction}>
                         <input type="hidden" name="quote_id" value={quote.id} />
+                        <input type="hidden" name="request_id" value={quote.request_id} />
                         <input type="hidden" name="decision" value="refused" />
                         <button className="btn" type="submit">
                           Refuser
