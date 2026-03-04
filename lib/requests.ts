@@ -89,7 +89,26 @@ export async function getClientRequestsFiltered(
   }
 
   const total = count ?? 0
-  const rows = (data ?? []) as RequestWithAddress[]
+  const rows: RequestWithAddress[] = (data ?? []).map((row) => {
+    const rawAddresses = (row as { addresses?: unknown }).addresses
+    const addr = Array.isArray(rawAddresses) ? rawAddresses[0] : rawAddresses
+    const normalizedAddress: RequestAddress = addr
+      ? {
+          street: (addr as { street?: string | null }).street ?? null,
+          postal_code: (addr as { postal_code?: string | null }).postal_code ?? null,
+          city: (addr as { city?: string | null }).city ?? null,
+        }
+      : null
+
+    return {
+      id: String((row as { id: string }).id),
+      type: String((row as { type: string }).type),
+      status: String((row as { status: string }).status),
+      description: ((row as { description?: string | null }).description ?? null) as string | null,
+      created_at: String((row as { created_at: string }).created_at),
+      addresses: normalizedAddress,
+    }
+  })
   return { data: rows, total }
 }
 
