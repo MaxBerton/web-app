@@ -95,11 +95,14 @@ export default async function RequestDetailPage({ params }: RequestDetailPagePro
     : typeof requestedDatesRaw === "string" && requestedDatesRaw.trim()
       ? [requestedDatesRaw]
       : null
-  const address = request.addresses
+  const addrRow = Array.isArray(request.addresses)
+    ? request.addresses[0]
+    : request.addresses
+  const address = addrRow
     ? {
-        street: (request.addresses as { street: string | null }).street ?? null,
-        postal_code: (request.addresses as { postal_code: string | null }).postal_code ?? null,
-        city: (request.addresses as { city: string | null }).city ?? null,
+        street: (addrRow as { street: string | null }).street ?? null,
+        postal_code: (addrRow as { postal_code: string | null }).postal_code ?? null,
+        city: (addrRow as { city: string | null }).city ?? null,
       }
     : null
   const nextAppointment = appointments
