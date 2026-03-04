@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { computeDrivingDistanceKm, estimateQuoteAmountCents, getPricingConfig } from "@/lib/pricing"
 import { REQUEST_STATUSES } from "@/lib/types"
 import { updateRequestStatusAction } from "../actions"
-import { createQuoteAction, sendAdminMessageAction } from "./actions"
+import { createInvoiceAction, createQuoteAction, sendAdminMessageAction } from "./actions"
 
 type AdminRequestDetailPageProps = {
   params: Promise<{ id: string }>
@@ -24,7 +24,7 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
     notFound()
   }
 
-  const [{ data: attachments }, { data: messages }, { data: quotes }] = await Promise.all([
+  const [{ data: attachments }, { data: messages }, { data: quotes }, { data: invoices }] = await Promise.all([
     supabase
       .from("attachments")
       .select("id, file_path, created_at")
@@ -38,6 +38,11 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
     supabase
       .from("quotes")
       .select("id, amount_cents, currency, status, details, created_at")
+      .eq("request_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("invoices")
+      .select("id, amount_cents, currency, status, created_at")
       .eq("request_id", id)
       .order("created_at", { ascending: false }),
   ])
@@ -59,6 +64,8 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
     kilometerRate: pricingConfig.kilometerRate,
   })
   const suggestedAmountChf = (suggestedAmountCents / 100).toFixed(2)
+  const latestQuoteAmountCents = quotes?.[0]?.amount_cents ?? suggestedAmountCents
+  const suggestedInvoiceAmountChf = (latestQuoteAmountCents / 100).toFixed(2)
 
   const signedUrls = await Promise.all(
     (attachments ?? []).map(async (file) => {
@@ -184,6 +191,53 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
           </label>
           <button className="btn" type="submit">
             Creer et envoyer le devis
+          </button>
+        </form>
+      </section>
+
+      <section className="card grid">
+        <h2>Factures</h2>
+        {invoices?.length ? (
+          <ul className="grid" style={{ margin: 0, paddingLeft: "1rem" }}>
+            {invoices.map((invoice) => (
+              <li key={invoice.id}>
+                <p style={{ margin: 0 }}>
+                  {(invoice.amount_cents / 100).toFixed(2)} {invoice.currency.toUpperCase()} - {invoice.status}
+                </p>
+                <small>Emise le {new Date(invoice.created_at).toLocaleString("fr-FR")}</small>
+                <a className="btn" href={`/api/invoices/${invoice.id}/pdf`} target="_blank" rel="noreferrer">
+                  Telecharger PDF
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Aucune facture creee pour cette demande.</p>
+        )}
+
+        <form className="grid" action={createInvoiceAction}>
+          <input type="hidden" name="request_id" value={request.id} />
+          <label className="grid" style={{ gap: "0.35rem" }}>
+            Montant facture (CHF)
+            <input
+              name="amount_chf"
+              type="number"
+              min="1"
+              step="0.01"
+              defaultValue={suggestedInvoiceAmountChf}
+              required
+            />
+          </label>
+          <label className="grid" style={{ gap: "0.35rem" }}>
+            Statut facture
+            <select name="invoice_status" defaultValue="pending">
+              <option value="pending">pending</option>
+              <option value="paid">paid</option>
+              <option value="canceled">canceled</option>
+            </select>
+          </label>
+          <button className="btn" type="submit">
+            Creer la facture
           </button>
         </form>
       </section>

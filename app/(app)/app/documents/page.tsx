@@ -12,6 +12,15 @@ type QuoteRow = {
   created_at: string
 }
 
+type InvoiceRow = {
+  id: string
+  request_id: string
+  amount_cents: number
+  currency: string
+  status: string
+  created_at: string
+}
+
 type RequestRow = {
   id: string
   type: string
@@ -20,13 +29,22 @@ type RequestRow = {
 
 export default async function DocumentsPage() {
   const supabase = await createClient()
-  const { data: quotesData } = await supabase
-    .from("quotes")
-    .select("id, request_id, amount_cents, currency, status, details, created_at")
-    .order("created_at", { ascending: false })
+  const [{ data: quotesData }, { data: invoicesData }] = await Promise.all([
+    supabase
+      .from("quotes")
+      .select("id, request_id, amount_cents, currency, status, details, created_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("invoices")
+      .select("id, request_id, amount_cents, currency, status, created_at")
+      .order("created_at", { ascending: false }),
+  ])
 
   const quotes = (quotesData ?? []) as QuoteRow[]
-  const requestIds = [...new Set(quotes.map((quote) => quote.request_id))]
+  const invoices = (invoicesData ?? []) as InvoiceRow[]
+  const requestIds = [
+    ...new Set([...quotes.map((quote) => quote.request_id), ...invoices.map((invoice) => invoice.request_id)]),
+  ]
 
   const { data: requestsData } =
     requestIds.length > 0
@@ -37,7 +55,7 @@ export default async function DocumentsPage() {
 
   return (
     <main className="card grid">
-      <h1>Documents - Devis</h1>
+      <h1>Documents - Devis et factures</h1>
       {quotes.length === 0 ? (
         <p>Empty state: aucun devis disponible pour le moment.</p>
       ) : (
@@ -87,6 +105,39 @@ export default async function DocumentsPage() {
                       </form>
                     </>
                   ) : null}
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      )}
+
+      <h2>Factures</h2>
+      {invoices.length === 0 ? (
+        <p>Empty state: aucune facture disponible pour le moment.</p>
+      ) : (
+        <div className="grid">
+          {invoices.map((invoice) => {
+            const request = requestById.get(invoice.request_id)
+            return (
+              <article key={invoice.id} className="card grid">
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
+                  <strong>
+                    {(invoice.amount_cents / 100).toFixed(2)} {invoice.currency.toUpperCase()}
+                  </strong>
+                  <span>Statut facture: {invoice.status}</span>
+                </div>
+                <small>
+                  Demande: {request?.type ?? "inconnue"} - statut: {request?.status ?? "inconnu"}
+                </small>
+                <small>Emise le {new Date(invoice.created_at).toLocaleString("fr-FR")}</small>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <Link className="btn" href={`/app/demandes/${invoice.request_id}`}>
+                    Ouvrir la demande
+                  </Link>
+                  <a className="btn" href={`/api/invoices/${invoice.id}/pdf`} target="_blank" rel="noreferrer">
+                    Telecharger PDF
+                  </a>
                 </div>
               </article>
             )

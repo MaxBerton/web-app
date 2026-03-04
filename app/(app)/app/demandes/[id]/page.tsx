@@ -21,7 +21,7 @@ export default async function RequestDetailPage({ params }: RequestDetailPagePro
     notFound()
   }
 
-  const [{ data: messages }, { data: attachments }, { data: quotes }] = await Promise.all([
+  const [{ data: messages }, { data: attachments }, { data: quotes }, { data: invoices }] = await Promise.all([
     supabase
       .from("messages")
       .select("id, message, sender_id, created_at")
@@ -35,6 +35,11 @@ export default async function RequestDetailPage({ params }: RequestDetailPagePro
     supabase
       .from("quotes")
       .select("id, amount_cents, currency, status, details, created_at")
+      .eq("request_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("invoices")
+      .select("id, amount_cents, currency, status, created_at")
       .eq("request_id", id)
       .order("created_at", { ascending: false }),
   ])
@@ -66,6 +71,30 @@ export default async function RequestDetailPage({ params }: RequestDetailPagePro
           <strong>{request.type}</strong> - {request.status}
         </p>
         <p>{request.description ?? "Aucune description."}</p>
+      </section>
+
+      <section className="card grid">
+        <h2>Factures</h2>
+        {!invoices?.length ? (
+          <p>Aucune facture pour cette demande actuellement.</p>
+        ) : (
+          <div className="grid">
+            {invoices.map((invoice) => (
+              <article key={invoice.id} className="card grid">
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
+                  <strong>
+                    {(invoice.amount_cents / 100).toFixed(2)} {invoice.currency.toUpperCase()}
+                  </strong>
+                  <span>Statut facture: {invoice.status}</span>
+                </div>
+                <small>Emise le {new Date(invoice.created_at).toLocaleString("fr-FR")}</small>
+                <a className="btn" href={`/api/invoices/${invoice.id}/pdf`} target="_blank" rel="noreferrer">
+                  Telecharger la facture PDF
+                </a>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="card grid">

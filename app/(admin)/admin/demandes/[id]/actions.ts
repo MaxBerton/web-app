@@ -91,3 +91,44 @@ export async function createQuoteAction(formData: FormData) {
   revalidatePath(`/app/demandes/${requestId}`)
   revalidatePath("/app/documents")
 }
+
+export async function createInvoiceAction(formData: FormData) {
+  await requireAdmin()
+  const requestId = getFormString(formData, "request_id")
+  const amountChf = getFormString(formData, "amount_chf")
+  const invoiceStatus = getFormString(formData, "invoice_status", "pending")
+
+  const amount = Number.parseFloat(amountChf)
+  if (!requestId || Number.isNaN(amount) || amount <= 0) {
+    return
+  }
+
+  const amountCents = Math.round(amount * 100)
+  const supabase = await createClient()
+
+  const { error: invoiceError } = await supabase.from("invoices").insert({
+    request_id: requestId,
+    amount_cents: amountCents,
+    currency: "chf",
+    status: invoiceStatus,
+  })
+
+  if (invoiceError) {
+    console.error("[admin.createInvoiceAction]", invoiceError.message)
+    return
+  }
+
+  const targetRequestStatus = invoiceStatus === "paid" ? "paid" : "invoiced"
+  const { error: requestError } = await supabase
+    .from("requests")
+    .update({ status: targetRequestStatus })
+    .eq("id", requestId)
+
+  if (requestError) {
+    console.error("[admin.createInvoiceAction.request]", requestError.message)
+  }
+
+  revalidatePath(`/admin/demandes/${requestId}`)
+  revalidatePath(`/app/demandes/${requestId}`)
+  revalidatePath("/app/documents")
+}
