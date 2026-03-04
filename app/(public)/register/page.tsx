@@ -2,16 +2,22 @@ import Link from "next/link"
 import { registerAction } from "../auth-actions"
 
 type RegisterPageProps = {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; detail?: string }>
 }
 
 export default async function RegisterPage({ searchParams }: RegisterPageProps) {
   const params = await searchParams
+  const errorMessage =
+    params.error === "user_already_exists" || params.error === "email_exists"
+      ? "Cet email est deja utilise. Essaie de te connecter ou de reinitialiser le mot de passe."
+      : params.error
+        ? "Erreur inscription: " + decodeURIComponent(params.detail ?? "cause inconnue")
+        : null
 
   return (
     <main className="card grid" style={{ maxWidth: 440 }}>
       <h1>Creation de compte</h1>
-      {params.error ? <p>Erreur: inscription impossible pour le moment.</p> : null}
+      {errorMessage ? <p>{errorMessage}</p> : null}
       <form className="grid" action={registerAction}>
         <label className="grid" style={{ gap: "0.35rem" }}>
           Email
