@@ -13,7 +13,7 @@ export default async function RequestDetailPage({ params }: RequestDetailPagePro
 
   const { data: request } = await supabase
     .from("requests")
-    .select("id, type, status, description, created_at")
+    .select("id, type, status, description, payload, created_at")
     .eq("id", id)
     .maybeSingle()
 
@@ -56,6 +56,7 @@ export default async function RequestDetailPage({ params }: RequestDetailPagePro
     `Statut actuel: ${request.status}`,
     "Prochaines etapes: devis, planification, intervention.",
   ]
+  const payload = (request.payload ?? {}) as Record<string, string>
 
   return (
     <main className="grid">
@@ -74,6 +75,20 @@ export default async function RequestDetailPage({ params }: RequestDetailPagePro
             <li key={item}>{item}</li>
           ))}
         </ul>
+      </section>
+
+      <section className="card grid">
+        <h2>Informations de la demande</h2>
+        <small>Adresse intervention: {payload.intervention_address ?? "Non renseignee"}</small>
+        <small>Adresse depart: {payload.departure_address ?? "Non renseignee"}</small>
+        <small>Adresse arrivee: {payload.destination_address ?? "Non renseignee"}</small>
+        <small>Type de logement: {payload.housing_type ?? "Non renseigne"}</small>
+        <small>Inventaire: {payload.inventory_summary ?? "Non renseigne"}</small>
+        <small>Volume estime (m3): {payload.estimated_volume_m3 ?? "Non renseigne"}</small>
+        <small>Employes souhaites: {payload.requested_workers ?? "Non renseigne"}</small>
+        <small>Creneau: {payload.time_window ?? "Non renseigne"}</small>
+        <small>Urgence: {payload.urgency_level ?? "Non renseignee"}</small>
+        <small>Contraintes acces: {payload.access_constraints ?? "Non renseignees"}</small>
       </section>
 
       <section className="card grid">
@@ -115,6 +130,9 @@ export default async function RequestDetailPage({ params }: RequestDetailPagePro
                   </div>
                   <p style={{ margin: 0 }}>{quote.details ?? "Sans details."}</p>
                   <small>Emis le {new Date(quote.created_at).toLocaleString("fr-FR")}</small>
+                  <a className="btn" href={`/api/quotes/${quote.id}/pdf`} target="_blank" rel="noreferrer">
+                    Telecharger le devis PDF
+                  </a>
                   {canRespond ? (
                     <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                       <form action={respondToQuoteAction}>

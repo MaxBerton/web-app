@@ -128,7 +128,7 @@ create table if not exists public.quotes (
   id uuid primary key default gen_random_uuid(),
   request_id uuid not null references public.requests(id) on delete cascade,
   amount_cents integer not null check (amount_cents >= 0),
-  currency text not null default 'eur',
+  currency text not null default 'chf',
   status text not null default 'draft',
   details text,
   created_at timestamptz not null default now()
@@ -138,10 +138,16 @@ create table if not exists public.invoices (
   id uuid primary key default gen_random_uuid(),
   request_id uuid not null references public.requests(id) on delete cascade,
   amount_cents integer not null check (amount_cents >= 0),
-  currency text not null default 'eur',
+  currency text not null default 'chf',
   status text not null default 'pending',
   stripe_invoice_id text,
   created_at timestamptz not null default now()
+);
+
+create table if not exists public.app_settings (
+  key text primary key,
+  value text not null,
+  updated_at timestamptz not null default now()
 );
 
 -- Indexes
@@ -207,6 +213,7 @@ alter table public.subscriptions enable row level security;
 alter table public.appointments enable row level security;
 alter table public.quotes enable row level security;
 alter table public.invoices enable row level security;
+alter table public.app_settings enable row level security;
 
 -- Profiles
 drop policy if exists profiles_select_own_or_admin on public.profiles;
@@ -399,6 +406,19 @@ on public.invoices for all
 using (public.is_admin())
 with check (public.is_admin());
 
+-- app settings
+drop policy if exists app_settings_select_authenticated on public.app_settings;
+create policy app_settings_select_authenticated
+on public.app_settings for select
+using (auth.role() = 'authenticated');
+
+drop policy if exists app_settings_write_admin on public.app_settings;
+create policy app_settings_write_admin
+on public.app_settings for all
+using (public.is_admin())
+with check (public.is_admin());
+
+
 -- RPC: client quote response
 create or replace function public.respond_to_quote(p_quote_id uuid, p_decision text)
 returns void
@@ -441,6 +461,13 @@ $$;
 
 revoke all on function public.respond_to_quote(uuid, text) from public;
 grant execute on function public.respond_to_quote(uuid, text) to authenticated;
+
+insert into public.app_settings(key, value)
+values
+  ('depot_address', 'Lausanne, Suisse'),
+  ('employee_hourly_rate', '60'),
+  ('kilometer_rate', '2.2')
+on conflict (key) do nothing;
 
 -- Private storage bucket
 insert into storage.buckets (id, name, public)

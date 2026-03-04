@@ -64,6 +64,9 @@ export default async function DocumentsPage() {
                   <Link className="btn" href={`/app/demandes/${quote.request_id}`}>
                     Ouvrir la demande
                   </Link>
+                  <a className="btn" href={`/api/quotes/${quote.id}/pdf`} target="_blank" rel="noreferrer">
+                    Telecharger PDF
+                  </a>
                   {canRespond ? (
                     <>
                       <form action={respondToQuoteAction}>

@@ -14,6 +14,7 @@ export default async function AdminLayout({
         <nav style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
           <Link href="/admin">Dashboard</Link>
           <Link href="/admin/demandes">Demandes</Link>
+          <Link href="/admin/services">Configuration</Link>
           <span>{user.email}</span>
           <form action={signOutAction}>
             <button className="btn" type="submit">
