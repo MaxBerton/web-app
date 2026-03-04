@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { requireUser } from "@/lib/auth"
+import { signOutAction } from "@/app/actions/auth"
 
 export default async function ClientLayout({
   children,
@@ -15,6 +16,11 @@ export default async function ClientLayout({
           <Link href="/app/demandes">Demandes</Link>
           <Link href="/app/demandes/nouvelle">Nouvelle demande</Link>
           <span>{user.email}</span>
+          <form action={signOutAction}>
+            <button className="btn" type="submit">
+              Deconnexion
+            </button>
+          </form>
         </nav>
       </header>
       {children}
