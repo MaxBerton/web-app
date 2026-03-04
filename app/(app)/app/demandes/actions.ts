@@ -6,29 +6,47 @@ import { getFormString } from "@/lib/form-data"
 import { createClient } from "@/lib/supabase/server"
 import { REQUEST_STATUSES } from "@/lib/types"
 
-export async function createRequestAction(formData: FormData) {
-  const serviceType = getFormString(formData, "service_type", "other")
-  const description = getFormString(formData, "description")
-  const interventionAddress = getFormString(formData, "intervention_address")
-  const departureAddress = getFormString(formData, "departure_address")
-  const destinationAddress = getFormString(formData, "destination_address")
-  const housingType = getFormString(formData, "housing_type")
-  const floorFrom = getFormString(formData, "floor_from")
-  const floorTo = getFormString(formData, "floor_to")
-  const elevatorFrom = getFormString(formData, "elevator_from")
-  const elevatorTo = getFormString(formData, "elevator_to")
-  const inventorySummary = getFormString(formData, "inventory_summary")
-  const estimatedVolume = getFormString(formData, "estimated_volume_m3")
-  const requestedWorkers = getFormString(formData, "requested_workers")
-  const accessConstraints = getFormString(formData, "access_constraints")
-  const requestedDate = getFormString(formData, "requested_date")
-  const timeWindow = getFormString(formData, "time_window")
-  const urgencyLevel = getFormString(formData, "urgency_level")
-  const notes = getFormString(formData, "notes")
+const MAX_ATTACHMENTS = 5
+const VALID_TYPES = ["clearance", "transport", "moving", "recycling", "other"] as const
 
-  if (!serviceType || !interventionAddress || !inventorySummary || !requestedDate) {
+export async function createRequestAction(formData: FormData) {
+  const type = getFormString(formData, "type") || getFormString(formData, "service_type") || "other"
+  const description = getFormString(formData, "description")
+  const street = getFormString(formData, "street")
+  const postalCode = getFormString(formData, "postal_code")
+  const city = getFormString(formData, "city")
+  const requestedDatesJson = getFormString(formData, "requested_dates")
+  let requestedDates: string[] = []
+  if (requestedDatesJson?.trim()) {
+    try {
+      const parsed = JSON.parse(requestedDatesJson)
+      if (Array.isArray(parsed)) {
+        requestedDates = parsed.filter((d): d is string => typeof d === "string" && d.trim() !== "")
+      }
+    } catch {
+      // ignore
+    }
+  }
+  const accessConstraints = getFormString(formData, "access_constraints")
+  const detailsJson = getFormString(formData, "details_json")
+
+  let details: Record<string, unknown> = {}
+  if (detailsJson?.trim()) {
+    try {
+      const parsed = JSON.parse(detailsJson) as Record<string, unknown>
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        details = parsed
+      }
+    } catch {
+      // ignore invalid JSON
+    }
+  }
+
+  if (!description?.trim()) {
     redirect("/app/demandes/nouvelle?error=missing_required")
   }
+
+  const serviceType = VALID_TYPES.includes(type as (typeof VALID_TYPES)[number]) ? type : "other"
 
   const supabase = await createClient()
   const {
@@ -36,33 +54,40 @@ export async function createRequestAction(formData: FormData) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/login")
+    redirect("/auth/login")
+  }
+
+  let addressId: string | null = null
+  if (street?.trim() && city?.trim()) {
+    const { data: address, error: addrError } = await supabase
+      .from("addresses")
+      .insert({
+        profile_id: user.id,
+        street: street.trim(),
+        postal_code: postalCode?.trim() || null,
+        city: city.trim(),
+        country: "CH",
+      })
+      .select("id")
+      .single()
+
+    if (!addrError && address) {
+      addressId = address.id
+    }
   }
 
   const { data: request, error } = await supabase
     .from("requests")
     .insert({
       client_id: user.id,
+      address_id: addressId,
       type: serviceType,
       status: REQUEST_STATUSES[1],
-      description,
+      description: description.trim(),
       payload: {
-        requested_date: requestedDate,
-        time_window: timeWindow,
-        urgency_level: urgencyLevel,
-        notes,
-        intervention_address: interventionAddress,
-        departure_address: departureAddress,
-        destination_address: destinationAddress,
-        housing_type: housingType,
-        floor_from: floorFrom,
-        floor_to: floorTo,
-        elevator_from: elevatorFrom,
-        elevator_to: elevatorTo,
-        inventory_summary: inventorySummary,
-        estimated_volume_m3: estimatedVolume,
-        requested_workers: requestedWorkers,
-        access_constraints: accessConstraints,
+        requested_dates: requestedDates.length > 0 ? requestedDates : null,
+        access_constraints: accessConstraints || null,
+        ...details,
       },
     })
     .select("id")
@@ -73,24 +98,27 @@ export async function createRequestAction(formData: FormData) {
     redirect("/app/demandes/nouvelle?error=create_failed")
   }
 
-  const files = formData.getAll("attachments")
-  for (const entry of files) {
-    if (!(entry instanceof File) || entry.size === 0) {
-      continue
-    }
-    const filePath = `${user.id}/${request.id}/${Date.now()}-${entry.name}`
-    const uploadResult = await supabase.storage.from("request-attachments").upload(filePath, entry)
+  const files = formData.getAll("attachments").filter((e): e is File => e instanceof File && e.size > 0)
+  for (let i = 0; i < Math.min(files.length, MAX_ATTACHMENTS); i++) {
+    const entry = files[i]
+    const filePath = `${user.id}/${request.id}/${Date.now()}-${i}-${entry.name}`
+    const uploadResult = await supabase.storage
+      .from("request-attachments")
+      .upload(filePath, entry, { contentType: entry.type || "application/octet-stream" })
 
     if (uploadResult.error) {
-      console.error("[demandes.upload]", uploadResult.error.message)
+      console.error("[demandes.upload]", uploadResult.error.message, filePath)
       continue
     }
 
-    await supabase.from("attachments").insert({
+    const { error: insertError } = await supabase.from("attachments").insert({
       request_id: request.id,
       file_path: filePath,
       uploaded_by: user.id,
     })
+    if (insertError) {
+      console.error("[demandes.attachments.insert]", insertError.message, filePath)
+    }
   }
 
   revalidatePath("/app/demandes")

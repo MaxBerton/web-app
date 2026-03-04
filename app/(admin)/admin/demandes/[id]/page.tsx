@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { computeDrivingDistanceKm, estimateQuoteAmountCents, getPricingConfig } from "@/lib/pricing"
+import { getRequestStatusLabel } from "@/lib/dashboard"
 import { REQUEST_STATUSES } from "@/lib/types"
 import { updateRequestStatusAction } from "../actions"
 import { createInvoiceAction, createQuoteAction, sendAdminMessageAction } from "./actions"
@@ -104,7 +105,7 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
           <select name="status" defaultValue={request.status}>
             {REQUEST_STATUSES.map((value) => (
               <option key={value} value={value}>
-                {value}
+                {getRequestStatusLabel(value)}
               </option>
             ))}
           </select>

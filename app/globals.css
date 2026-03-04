@@ -1,46 +1,109 @@
-:root {
-  color-scheme: light dark;
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+@import "tailwindcss";
+
+@theme {
+  /* Design system Dr.Tri */
+  --color-dr-tri-primary: #2d5a3d;
+  --color-dr-tri-primary-hover: #3a6f4a;
+  --color-dr-tri-light-green: #e8f0eb;
+  --color-dr-tri-background: #f8f6f3;
+  --color-dr-tri-dark: #1a1a1a;
+  --color-dr-tri-muted: #6b7280;
+  --color-dr-tri-border: #d1d5db;
+  --radius-dr-tri: 0.75rem;
+  --radius-dr-tri-lg: 1rem;
+  --font-sans: Inter, system-ui, -apple-system, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
+@layer base {
+  body {
+    @apply antialiased;
+  }
+  a {
+    @apply text-inherit no-underline;
+  }
 }
 
-body {
-  margin: 0;
-  background: #0b1020;
-  color: #e8ecf5;
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-dr-tri bg-dr-tri-primary px-6 py-3 text-lg font-semibold text-white transition-colors hover:bg-dr-tri-primary-hover;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-dr-tri border border-dr-tri-border bg-transparent px-6 py-3 text-lg font-semibold text-dr-tri-dark transition-colors hover:bg-dr-tri-light-green;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-dr-tri border border-dr-tri-border bg-transparent px-6 py-3 text-lg font-semibold text-dr-tri-dark transition-colors hover:bg-dr-tri-light-green;
+  }
+  .section-title {
+    @apply text-center text-3xl font-bold text-dr-tri-dark md:text-4xl;
+  }
+  .container-dr {
+    @apply mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8;
+  }
+  .link {
+    @apply text-dr-tri-primary font-medium underline decoration-dr-tri-primary/50 underline-offset-2 hover:decoration-dr-tri-primary;
+  }
+  .sr-only {
+    @apply absolute h-px w-px overflow-hidden whitespace-nowrap border-0 p-0;
+    margin: -1px;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+  }
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* Grille globale */
+.grid {
+  display: grid;
+  gap: 1rem;
 }
 
+/* Zone admin – thème sombre */
 .shell {
   margin: 0 auto;
   max-width: 1100px;
   padding: 1.25rem;
 }
 
+/* Zone app (dashboard client) – couleurs du site Dr.Tri */
+.app-dr {
+  --app-card-bg: #fff;
+  --app-card-border: var(--color-dr-tri-border);
+  --app-text: var(--color-dr-tri-dark);
+  --app-text-muted: var(--color-dr-tri-muted);
+}
+.app-dr .card {
+  border: 1px solid var(--app-card-border);
+  border-radius: var(--radius-dr-tri);
+  background: var(--app-card-bg);
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
+}
+.app-dr .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-dr-tri);
+  padding: 0.5rem 1rem;
+  background: var(--color-dr-tri-primary);
+  color: #fff;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+.app-dr .btn:hover {
+  background: var(--color-dr-tri-primary-hover);
+}
+.app-dr .btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Fallback zone admin / autres (thème sombre) */
 .card {
   border: 1px solid #29324d;
   border-radius: 10px;
   background: #131a2d;
   padding: 1rem;
 }
-
-.grid {
-  display: grid;
-  gap: 1rem;
-}
-
 .btn {
   display: inline-flex;
   align-items: center;

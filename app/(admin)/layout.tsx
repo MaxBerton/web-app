@@ -8,6 +8,7 @@ export default async function AdminLayout({
   const user = await requireAdmin()
 
   return (
+    <div className="min-h-screen bg-[#0b1020] text-[#e8ecf5]">
     <div className="shell grid">
       <header className="card" style={{ display: "flex", justifyContent: "space-between" }}>
         <strong>Backoffice admin</strong>
@@ -24,6 +25,7 @@ export default async function AdminLayout({
         </nav>
       </header>
       {children}
+    </div>
     </div>
   )
 }

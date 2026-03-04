@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
 
   if ((isAppArea || isAdminArea) && !user) {
     const nextUrl = request.nextUrl.clone()
-    nextUrl.pathname = "/login"
+    nextUrl.pathname = "/auth/login"
     nextUrl.searchParams.set("next", pathname)
     return NextResponse.redirect(nextUrl)
   }

@@ -1,80 +1,50 @@
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
+import { requireUser } from "@/lib/auth"
 import { getClientRequests } from "@/lib/requests"
+import {
+  getClientProfile,
+  getDashboardCounts,
+  getClientNextAppointment,
+} from "@/lib/dashboard"
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader"
+import { KpiCards } from "@/components/dashboard/KpiCards"
+import { RecentRequestsList } from "@/components/dashboard/RecentRequestsList"
+import { SupportCard } from "@/components/dashboard/SupportCard"
 
 export default async function ClientDashboardPage() {
-  const supabase = await createClient()
-  const [requests, { data: invoicesData }] = await Promise.all([
+  const user = await requireUser()
+  const [profile, requests] = await Promise.all([
+    getClientProfile(user.id),
     getClientRequests(),
-    supabase
-      .from("invoices")
-      .select("id, request_id, amount_cents, currency, status, created_at")
-      .order("created_at", { ascending: false })
-      .limit(10),
   ])
 
-  const invoices = invoicesData ?? []
+  const counts = getDashboardCounts(requests)
+  const nextAppointment = await getClientNextAppointment(requests.map((r) => r.id))
 
   return (
-    <main className="grid">
-      <section className="card grid">
-        <h1>Dashboard client</h1>
-        <p>Vue rapide de vos demandes et factures.</p>
-        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-          <Link className="btn" href="/app/demandes/nouvelle">
-            Creer une demande
-          </Link>
-          <Link className="btn" href="/app/demandes">
-            Voir toutes les demandes
-          </Link>
-          <Link className="btn" href="/app/documents">
-            Devis et factures
-          </Link>
-        </div>
-      </section>
+    <main className="grid gap-4">
+      <DashboardHeader firstName={profile?.first_name ?? null} />
+      <KpiCards
+        enCours={counts.enCours}
+        terminees={counts.terminees}
+        nextAppointment={nextAppointment}
+      />
 
-      <section className="card grid">
-        <h2>Factures emises</h2>
-        {invoices.length === 0 ? (
-          <p>Aucune facture pour le moment.</p>
-        ) : (
-          <ul className="grid" style={{ margin: 0, paddingLeft: "1rem" }}>
-            {invoices.map((inv) => (
-              <li key={inv.id}>
-                <Link href={`/app/demandes/${inv.request_id}`}>
-                  {(inv.amount_cents / 100).toFixed(2)} {inv.currency.toUpperCase()} - {inv.status}
-                </Link>
-                {" · "}
-                <a href={`/api/invoices/${inv.id}/pdf`} target="_blank" rel="noreferrer">
-                  PDF
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-        {invoices.length > 0 ? (
-          <Link className="btn" href="/app/documents">
-            Voir tous les documents
+      {requests.length === 0 ? (
+        <section className="card grid text-center">
+          <h2 className="text-lg font-semibold text-dr-tri-dark">Aucune demande</h2>
+          <p className="text-sm text-dr-tri-muted">
+            Vous n&apos;avez pas encore de demande. Créez-en une pour commencer.
+          </p>
+          <Link href="/app/demandes/nouvelle" className="btn mx-auto mt-2 w-fit">
+            Créer une demande
           </Link>
-        ) : null}
-      </section>
+        </section>
+      ) : (
+        <RecentRequestsList requests={requests} />
+      )}
 
-      <section className="card grid">
-        <h2>Dernieres demandes</h2>
-        {requests.length === 0 ? (
-          <p>Aucune demande pour le moment.</p>
-        ) : (
-          <ul className="grid" style={{ margin: 0, paddingLeft: "1rem" }}>
-            {requests.slice(0, 5).map((request) => (
-              <li key={request.id}>
-                <Link href={`/app/demandes/${request.id}`}>
-                  {request.type} - <em>{request.status}</em>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <SupportCard />
     </main>
   )
 }

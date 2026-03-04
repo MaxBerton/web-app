@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import { getRequestStatusLabel } from "@/lib/dashboard"
 import { REQUEST_STATUSES } from "@/lib/types"
 import { updateRequestStatusAction } from "./actions"
 
@@ -61,7 +62,7 @@ export default async function AdminRequestsPage({ searchParams }: AdminRequestsP
                 <select name="status" defaultValue={request.status}>
                   {REQUEST_STATUSES.map((value) => (
                     <option key={value} value={value}>
-                      {value}
+                      {getRequestStatusLabel(value)}
                     </option>
                   ))}
                 </select>
