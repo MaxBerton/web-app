@@ -15,6 +15,7 @@ export default async function ClientLayout({
           <Link href="/app">Dashboard</Link>
           <Link href="/app/demandes">Demandes</Link>
           <Link href="/app/demandes/nouvelle">Nouvelle demande</Link>
+          <Link href="/app/documents">Documents</Link>
           <span>{user.email}</span>
           <form action={signOutAction}>
             <button className="btn" type="submit">

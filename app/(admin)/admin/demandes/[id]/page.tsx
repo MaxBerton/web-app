@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { REQUEST_STATUSES } from "@/lib/types"
 import { updateRequestStatusAction } from "../actions"
-import { sendAdminMessageAction } from "./actions"
+import { createQuoteAction, sendAdminMessageAction } from "./actions"
 
 type AdminRequestDetailPageProps = {
   params: Promise<{ id: string }>
@@ -22,7 +22,7 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
     notFound()
   }
 
-  const [{ data: attachments }, { data: messages }] = await Promise.all([
+  const [{ data: attachments }, { data: messages }, { data: quotes }] = await Promise.all([
     supabase
       .from("attachments")
       .select("id, file_path, created_at")
@@ -33,6 +33,11 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
       .select("id, sender_id, message, created_at")
       .eq("request_id", id)
       .order("created_at", { ascending: true }),
+    supabase
+      .from("quotes")
+      .select("id, amount_cents, currency, status, details, created_at")
+      .eq("request_id", id)
+      .order("created_at", { ascending: false }),
   ])
 
   const signedUrls = await Promise.all(
@@ -89,6 +94,39 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="card grid">
+        <h2>Devis</h2>
+        {quotes?.length ? (
+          <ul className="grid" style={{ margin: 0, paddingLeft: "1rem" }}>
+            {quotes.map((quote) => (
+              <li key={quote.id}>
+                <p style={{ margin: 0 }}>
+                  {(quote.amount_cents / 100).toFixed(2)} {quote.currency.toUpperCase()} - {quote.status}
+                </p>
+                <small>{quote.details ?? "Sans details"} </small>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Aucun devis cree pour cette demande.</p>
+        )}
+
+        <form className="grid" action={createQuoteAction}>
+          <input type="hidden" name="request_id" value={request.id} />
+          <label className="grid" style={{ gap: "0.35rem" }}>
+            Montant (EUR)
+            <input name="amount_euros" type="number" min="1" step="0.01" required />
+          </label>
+          <label className="grid" style={{ gap: "0.35rem" }}>
+            Details
+            <textarea name="details" rows={3} placeholder="Detail de la prestation, delai, inclusions..." />
+          </label>
+          <button className="btn" type="submit">
+            Creer et envoyer le devis
+          </button>
+        </form>
       </section>
 
       <section className="card grid">
