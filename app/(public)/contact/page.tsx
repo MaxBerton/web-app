@@ -73,7 +73,7 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
             {/* MAP */}
             <aside className="overflow-hidden rounded-dr-tri-lg border border-dr-tri-border">
               <iframe
-                src="https://www.google.com/maps?q=Gen%C3%A8ve&output=embed"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4583.9560985901435!2d6.2045637000000005!3d46.3788299!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x478c677814f2683b%3A0xda110fe97065996a!2sDr.Tri!5e1!3m2!1sfr!2sfr!4v1772739700666!5m2!1sfr!2sfr"
                 width="100%"
                 height="500"
                 style={{ border: 0 }}
