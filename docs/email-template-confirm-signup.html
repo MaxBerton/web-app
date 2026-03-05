@@ -1,0 +1,33 @@
+<!-- Template email "Confirm signup" pour Supabase -->
+<!-- À copier dans : Authentication → Email Templates → Confirm signup → Message body -->
+<!-- Utilise les variables Supabase : {{ .SiteURL }}, {{ .TokenHash }}, {{ .Email }} -->
+
+<div style="font-family: Inter, system-ui, -apple-system, sans-serif; max-width: 520px; margin: 0 auto; background-color: #f8f6f3; padding: 32px 24px; color: #1a1a1a;">
+  <!-- Logo -->
+  <p style="margin: 0 0 24px 0; text-align: center;">
+    <a href="{{ .SiteURL }}" style="display: inline-block;">
+      <img src="{{ .SiteURL }}/images/logo-drtri.webp" alt="Dr.Tri" width="120" height="30" style="display: block; height: 30px; width: auto;" />
+    </a>
+  </p>
+
+  <div style="background-color: #ffffff; border-radius: 12px; padding: 28px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #d1d5db;">
+    <h1 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #2d5a3d;">
+      Bienvenue
+    </h1>
+    <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.5; color: #1a1a1a;">
+      Merci de vous être inscrit. Pour activer votre compte, cliquez sur le bouton ci-dessous pour confirmer votre adresse email.
+    </p>
+    <p style="margin: 0 0 24px 0; text-align: center;">
+      <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email" style="display: inline-block; background-color: #2d5a3d; color: #ffffff; font-weight: 600; font-size: 16px; text-decoration: none; padding: 14px 28px; border-radius: 12px;">
+        Confirmer mon adresse email
+      </a>
+    </p>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #6b7280;">
+      Si vous n’êtes pas à l’origine de cette inscription, vous pouvez ignorer ce message.
+    </p>
+  </div>
+
+  <p style="margin: 24px 0 0 0; font-size: 14px; color: #6b7280; text-align: center;">
+    — L’équipe Dr.Tri
+  </p>
+</div>

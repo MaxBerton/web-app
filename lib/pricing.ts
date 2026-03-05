@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 
 export type PricingConfig = {
   depotAddress: string
+  depotLat: number | null
+  depotLng: number | null
   employeeHourlyRate: number
   kilometerRate: number
 }
@@ -44,12 +46,18 @@ export async function getPricingConfig(): Promise<PricingConfig> {
   const { data } = await supabase
     .from("app_settings")
     .select("key, value")
-    .in("key", ["depot_address", "employee_hourly_rate", "kilometer_rate"])
+    .in("key", ["depot_address", "depot_lat", "depot_lng", "employee_hourly_rate", "kilometer_rate"])
 
   const map = new Map((data ?? []).map((entry) => [entry.key, entry.value]))
+  const depotLatRaw = map.get("depot_lat")
+  const depotLngRaw = map.get("depot_lng")
+  const depotLat = depotLatRaw != null ? parseFloat(String(depotLatRaw)) : null
+  const depotLng = depotLngRaw != null ? parseFloat(String(depotLngRaw)) : null
 
   return {
     depotAddress: map.get("depot_address") ?? DEFAULT_CONFIG.depotAddress,
+    depotLat: Number.isFinite(depotLat) ? depotLat! : null,
+    depotLng: Number.isFinite(depotLng) ? depotLng! : null,
     employeeHourlyRate: toNumber(map.get("employee_hourly_rate") ?? null, DEFAULT_CONFIG.employeeHourlyRate),
     kilometerRate: toNumber(map.get("kilometer_rate") ?? null, DEFAULT_CONFIG.kilometerRate),
   }

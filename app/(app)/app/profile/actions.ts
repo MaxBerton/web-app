@@ -1,8 +1,11 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { getFormString } from "@/lib/form-data"
 import { createClient } from "@/lib/supabase/server"
+
+const PROFILE_PATH = "/app/profile"
 
 const PHONE_REGEX = /^[\d\s+().-]{8,20}$/
 const ZIP_REGEX = /^\d{4,5}$/
@@ -51,6 +54,7 @@ export async function updateProfileAction(
     console.error("[profile.updateProfile]", error.message)
     return { error: "Impossible d'enregistrer les modifications." }
   }
+  revalidatePath(PROFILE_PATH)
   return { saved: true }
 }
 
@@ -65,6 +69,11 @@ export async function updateAddressAction(
   const street = getFormString(formData, "street").trim()
   const postalCode = getFormString(formData, "postal_code").trim()
   const city = getFormString(formData, "city").trim()
+  const latRaw = getFormString(formData, "latitude")
+  const lngRaw = getFormString(formData, "longitude")
+  const latitude = latRaw ? parseFloat(latRaw) : null
+  const longitude = lngRaw ? parseFloat(lngRaw) : null
+  const hasCoords = latitude != null && !Number.isNaN(latitude) && longitude != null && !Number.isNaN(longitude)
 
   const zipErr = validateZip(postalCode)
   if (zipErr) return { error: zipErr }
@@ -86,6 +95,7 @@ export async function updateAddressAction(
         street: street.trim(),
         postal_code: postalCode || null,
         city: city.trim(),
+        ...(hasCoords ? { latitude, longitude } : {}),
       })
       .eq("id", existing.id)
 
@@ -102,11 +112,13 @@ export async function updateAddressAction(
       postal_code: postalCode || null,
       city,
       country: "CH",
+      ...(hasCoords ? { latitude, longitude } : {}),
     })
     if (error) {
       console.error("[profile.insertAddress]", error.message)
       return { error: "Impossible de créer l'adresse." }
     }
   }
+  revalidatePath(PROFILE_PATH)
   return { saved: true }
 }

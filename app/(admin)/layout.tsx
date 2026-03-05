@@ -1,31 +1,32 @@
-import Link from "next/link"
 import { requireAdmin } from "@/lib/auth"
 import { signOutAction } from "@/app/actions/auth"
+import { Logo } from "@/components/Logo"
+import { AdminNav } from "@/components/admin/AdminNav"
 
 export default async function AdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const user = await requireAdmin()
+  await requireAdmin()
 
   return (
-    <div className="min-h-screen bg-[#0b1020] text-[#e8ecf5]">
-    <div className="shell grid">
-      <header className="card" style={{ display: "flex", justifyContent: "space-between" }}>
-        <strong>Backoffice admin</strong>
-        <nav style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-          <Link href="/admin">Dashboard</Link>
-          <Link href="/admin/demandes">Demandes</Link>
-          <Link href="/admin/services">Configuration</Link>
-          <span>{user.email}</span>
+    <div className="admin-dr flex min-h-screen bg-[var(--admin-bg)] text-[var(--admin-text)]">
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar-logo">
+          <Logo href="/admin" size="sm" showText={false} direction="row" />
+        </div>
+        <AdminNav />
+        <div className="flex-1" />
+        <div className="border-t border-[var(--admin-card-border)] pt-3 px-3">
           <form action={signOutAction}>
-            <button className="btn" type="submit">
-              Deconnexion
+            <button className="btn w-full justify-center text-sm" type="submit">
+              Déconnexion
             </button>
           </form>
-        </nav>
-      </header>
-      {children}
-    </div>
+        </div>
+      </aside>
+      <div className="admin-main">
+        {children}
+      </div>
     </div>
   )
 }

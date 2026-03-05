@@ -2,9 +2,18 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { computeDrivingDistanceKm, estimateQuoteAmountCents, getPricingConfig } from "@/lib/pricing"
 import { getRequestStatusLabel } from "@/lib/dashboard"
+import { getPayloadDetailEntries } from "@/lib/request-details-labels"
 import { REQUEST_STATUSES } from "@/lib/types"
 import { updateRequestStatusAction } from "../actions"
 import { createInvoiceAction, createQuoteAction, sendAdminMessageAction } from "./actions"
+
+const TYPE_LABELS: Record<string, string> = {
+  clearance: "Débarras",
+  transport: "Transport / déménagement",
+  moving: "Installation",
+  recycling: "Recyclage",
+  other: "Jardin & travaux",
+}
 
 type AdminRequestDetailPageProps = {
   params: Promise<{ id: string }>
@@ -17,7 +26,7 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
 
   const { data: request } = await supabase
     .from("requests")
-    .select("id, client_id, type, status, description, payload, created_at")
+    .select("id, client_id, type, status, description, payload, created_at, address_id, addresses(street, postal_code, city)")
     .eq("id", id)
     .maybeSingle()
 
@@ -48,8 +57,25 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
       .order("created_at", { ascending: false }),
   ])
 
-  const requestPayload = (request.payload ?? {}) as Record<string, string>
-  const interventionAddress = requestPayload.intervention_address ?? ""
+  const requestPayload = (request.payload ?? {}) as Record<string, unknown>
+  const addrRow = Array.isArray((request as { addresses?: unknown }).addresses)
+    ? (request as { addresses: unknown[] }).addresses[0]
+    : (request as { addresses?: { street?: string; postal_code?: string; city?: string } | null }).addresses
+  const address = addrRow
+    ? [
+        (addrRow as { street?: string }).street,
+        [(addrRow as { postal_code?: string }).postal_code, (addrRow as { city?: string }).city].filter(Boolean).join(" "),
+      ].filter(Boolean).join(", ")
+    : ""
+  const interventionAddress = address || (typeof requestPayload.intervention_address === "string" ? requestPayload.intervention_address : "")
+  const requestedDatesRaw = requestPayload.requested_dates ?? requestPayload.requested_date
+  const requestedDates: string[] = Array.isArray(requestedDatesRaw)
+    ? requestedDatesRaw.filter((d): d is string => typeof d === "string")
+    : typeof requestedDatesRaw === "string" && requestedDatesRaw.trim()
+      ? [requestedDatesRaw]
+      : []
+  const accessConstraints = typeof requestPayload.access_constraints === "string" ? requestPayload.access_constraints : ""
+  const detailEntries = getPayloadDetailEntries(requestPayload as Record<string, unknown>)
   const defaultEmployees = 2
   const defaultHours = 4
   const distanceKm =
@@ -82,24 +108,57 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
 
   return (
     <main className="grid">
-      <section className="card grid">
-        <h1>Demande admin #{request.id.slice(0, 8)}</h1>
-        <p>
-          Client: <code>{request.client_id}</code>
-        </p>
-        <p>{request.description ?? "Sans description."}</p>
-        <p>
-          Adresse intervention: <strong>{interventionAddress || "Non renseignee"}</strong>
-        </p>
-        <small>Depart: {requestPayload.departure_address ?? "Non renseigne"}</small>
-        <small>Arrivee: {requestPayload.destination_address ?? "Non renseignee"}</small>
-        <small>Logement: {requestPayload.housing_type ?? "Non renseigne"}</small>
-        <small>Inventaire: {requestPayload.inventory_summary ?? "Non renseigne"}</small>
-        <small>Volume (m3): {requestPayload.estimated_volume_m3 ?? "Non renseigne"}</small>
-        <small>Employes souhaites: {requestPayload.requested_workers ?? "Non renseigne"}</small>
-        <small>Creneau: {requestPayload.time_window ?? "Non renseigne"}</small>
-        <small>Urgence: {requestPayload.urgency_level ?? "Non renseignee"}</small>
-        <small>Contraintes acces: {requestPayload.access_constraints ?? "Non renseignees"}</small>
+      <section className="card grid gap-4">
+        <h1>Demande #{request.id.slice(0, 8)}</h1>
+        <div className="grid gap-2 text-sm">
+          <p>
+            <span className="text-dr-tri-muted">Client</span>{" "}
+            <code className="rounded bg-dr-tri-background px-1">{request.client_id}</code>
+          </p>
+          <p>
+            <span className="text-dr-tri-muted">Type de demande</span>{" "}
+            <strong>{TYPE_LABELS[request.type] ?? request.type}</strong>
+          </p>
+          <p>
+            <span className="text-dr-tri-muted">Description</span>
+            <span className="mt-0.5 block whitespace-pre-wrap text-dr-tri-dark">{request.description ?? "—"}</span>
+          </p>
+          <p>
+            <span className="text-dr-tri-muted">Adresse d&apos;intervention</span>
+            <span className="mt-0.5 block font-medium text-dr-tri-dark">{interventionAddress || "—"}</span>
+          </p>
+          {requestedDates.length > 0 && (
+            <p>
+              <span className="text-dr-tri-muted">Dates souhaitées</span>
+              <ul className="mt-0.5 list-inside list-disc space-y-0.5 text-dr-tri-dark">
+                {requestedDates.map((d) => (
+                  <li key={d}>
+                    {new Date(d).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long", year: "numeric" })}
+                  </li>
+                ))}
+              </ul>
+            </p>
+          )}
+          {accessConstraints && (
+            <p>
+              <span className="text-dr-tri-muted">Notes d&apos;accès (code, digicode…)</span>
+              <span className="mt-0.5 block whitespace-pre-wrap text-dr-tri-dark">{accessConstraints}</span>
+            </p>
+          )}
+          {detailEntries.length > 0 && (
+            <div className="border-t border-dr-tri-border pt-3">
+              <p className="mb-2 text-dr-tri-muted">Informations complémentaires (détails du formulaire)</p>
+              <ul className="grid gap-1.5" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                {detailEntries.map(({ label, value }) => (
+                  <li key={label} className="flex flex-wrap gap-x-2 text-dr-tri-dark">
+                    <span className="shrink-0 text-dr-tri-muted">{label}</span>
+                    <span>{value}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
         <form action={updateRequestStatusAction} style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           <input type="hidden" name="request_id" value={request.id} />
           <select name="status" defaultValue={request.status}>
@@ -110,7 +169,7 @@ export default async function AdminRequestDetailPage({ params }: AdminRequestDet
             ))}
           </select>
           <button className="btn" type="submit">
-            Mettre a jour le statut
+            Mettre à jour le statut
           </button>
         </form>
       </section>

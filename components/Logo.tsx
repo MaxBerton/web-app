@@ -49,7 +49,7 @@ export function Logo({ href = "/", className = "", size = "md", showText = true,
     return (
       <Link
         href={href}
-        className="rounded-dr-tri focus:outline-none focus:ring-2 focus:ring-dr-tri-primary focus:ring-offset-2"
+        className="rounded-dr-tri focus:outline-none"
         aria-label="Dr.Tri - Accueil"
       >
         {content}

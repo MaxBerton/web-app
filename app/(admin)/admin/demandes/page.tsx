@@ -24,56 +24,87 @@ export default async function AdminRequestsPage({ searchParams }: AdminRequestsP
   const { data: requests } = await query
 
   return (
-    <main className="grid">
-      <section className="card grid">
-        <h1>Pipeline des demandes</h1>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <Link className="btn" href="/admin/demandes">
-            Tous
-          </Link>
-          {REQUEST_STATUSES.map((value) => (
-            <Link key={value} className="btn" href={`/admin/demandes?status=${value}`}>
-              {value}
-            </Link>
-          ))}
+    <>
+      <div className="admin-topbar">
+        <div>
+          <h1 className="admin-page-title">Demandes</h1>
+          <p className="mt-0.5 text-sm text-[var(--admin-text-muted)]">
+            Pipeline des demandes clients
+          </p>
         </div>
-      </section>
+        <p className="text-sm text-[var(--admin-text-muted)]">
+          {requests?.length ?? 0} résultat(s)
+        </p>
+      </div>
 
-      <section className="card grid">
+      <div className="admin-filter-bar">
+        <Link href="/admin/demandes" className={`admin-chip ${!status ? "admin-chip-active" : ""}`}>
+          Tous
+        </Link>
+        {REQUEST_STATUSES.map((value) => (
+          <Link
+            key={value}
+            href={`/admin/demandes?status=${value}`}
+            className={`admin-chip ${status === value ? "admin-chip-active" : ""}`}
+          >
+            {getRequestStatusLabel(value)}
+          </Link>
+        ))}
+      </div>
+
+      <section className="admin-table-wrap">
         {!requests?.length ? (
-          <p>Empty state: aucune demande sur ce filtre.</p>
+          <p className="p-4 text-sm text-[var(--admin-text-muted)]">
+            Aucune demande trouvée pour ce filtre.
+          </p>
         ) : (
-          requests.map((request) => (
-            <article key={request.id} className="card grid">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
-                <div className="grid" style={{ gap: "0.2rem" }}>
-                  <strong>{request.type}</strong>
-                  <small>{new Date(request.created_at).toLocaleString("fr-FR")}</small>
-                </div>
-                <Link className="btn" href={`/admin/demandes/${request.id}`}>
-                  Ouvrir
-                </Link>
-              </div>
-
-              <p>{request.description ?? "Sans description."}</p>
-
-              <form action={updateRequestStatusAction} style={{ display: "flex", gap: "0.5rem" }}>
-                <input type="hidden" name="request_id" value={request.id} />
-                <select name="status" defaultValue={request.status}>
-                  {REQUEST_STATUSES.map((value) => (
-                    <option key={value} value={value}>
-                      {getRequestStatusLabel(value)}
-                    </option>
-                  ))}
-                </select>
-                <button className="btn" type="submit">
-                  Changer statut
-                </button>
-              </form>
-            </article>
-          ))
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Service</th>
+                <th>Statut</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((request) => (
+                <tr key={request.id}>
+                  <td className="whitespace-nowrap text-[var(--admin-text-muted)]">
+                    {new Date(request.created_at).toLocaleString("fr-FR")}
+                  </td>
+                  <td className="font-medium text-[var(--admin-text)]">{request.type}</td>
+                  <td className="text-[var(--admin-text)]">{getRequestStatusLabel(request.status)}</td>
+                  <td className="max-w-[420px] truncate text-[var(--admin-text-muted)]">
+                    {request.description ?? "Sans description."}
+                  </td>
+                  <td>
+                    <div className="admin-inline-form">
+                      <Link className="btn !py-1.5 !text-sm" href={`/admin/demandes/${request.id}`}>
+                        Ouvrir
+                      </Link>
+                      <form action={updateRequestStatusAction} className="admin-inline-form">
+                        <input type="hidden" name="request_id" value={request.id} />
+                        <select className="admin-select" name="status" defaultValue={request.status}>
+                          {REQUEST_STATUSES.map((value) => (
+                            <option key={value} value={value}>
+                              {getRequestStatusLabel(value)}
+                            </option>
+                          ))}
+                        </select>
+                        <button className="btn !py-1.5 !text-sm" type="submit">
+                          Mettre à jour
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </section>
-    </main>
+    </>
   )
 }

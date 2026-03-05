@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation"
 import { getFormString } from "@/lib/form-data"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 
 function sanitizeNextPath(pathname: string): string {
   return pathname.startsWith("/") ? pathname : "/app"
@@ -11,7 +11,7 @@ function sanitizeNextPath(pathname: string): string {
 export async function signOutAction() {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  redirect("/auth/login")
+  redirect("/")
 }
 
 export async function signInAction(formData: FormData) {
@@ -24,12 +24,19 @@ export async function signInAction(formData: FormData) {
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
     const code = error.code === "email_not_confirmed" ? "email_not_confirmed" : "invalid_credentials"
     const detail = encodeURIComponent(error.message)
     redirect(`/auth/login?error=${code}&detail=${detail}`)
+  }
+
+  if (data.user) {
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single()
+    if (profile?.role === "admin") {
+      redirect("/admin")
+    }
   }
 
   redirect(nextPath)
@@ -39,8 +46,9 @@ export async function registerAction(formData: FormData) {
   const email = getFormString(formData, "email")
   const password = getFormString(formData, "password")
   const confirmPassword = getFormString(formData, "confirm_password")
-  const firstName = getFormString(formData, "first_name")
-  const lastName = getFormString(formData, "last_name")
+  const firstName = getFormString(formData, "first_name").trim()
+  const lastName = getFormString(formData, "last_name").trim()
+  const phone = getFormString(formData, "phone").trim()
 
   if (!email || !password) {
     redirect("/auth/register?error=missing_fields")
@@ -55,7 +63,11 @@ export async function registerAction(formData: FormData) {
     email,
     password,
     options: {
-      data: { first_name: firstName || undefined, last_name: lastName || undefined },
+      data: {
+        first_name: firstName || undefined,
+        last_name: lastName || undefined,
+        phone: phone || undefined,
+      },
     },
   })
 
@@ -65,14 +77,22 @@ export async function registerAction(formData: FormData) {
     redirect(`/auth/register?error=${code}&detail=${detail}`)
   }
 
-  if (data.user && (firstName || lastName)) {
-    await supabase
+  // Enregistrer prénom, nom et téléphone dans public.profiles (client sans session après signUp,
+  // donc RLS bloquerait l'update — on utilise le client service_role pour contourner).
+  if (data.user) {
+    const serviceSupabase = createServiceRoleClient()
+    await serviceSupabase
       .from("profiles")
-      .update({
-        first_name: firstName || null,
-        last_name: lastName || null,
-      })
-      .eq("id", data.user.id)
+      .upsert(
+        {
+          id: data.user.id,
+          email: data.user.email ?? undefined,
+          first_name: firstName || null,
+          last_name: lastName || null,
+          phone: phone || null,
+        },
+        { onConflict: "id" }
+      )
   }
 
   if (!data.session) {

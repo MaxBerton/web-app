@@ -45,5 +45,16 @@ npm run dev
 
 ## Notes
 
+- **Mapbox (adresses)** : les formulaires d’adresse utilisent l’autocomplete Mapbox. Définir `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` dans `.env.local` (clé publique Mapbox, utilisée côté client pour le géocodage). Créer un token sur [Mapbox](https://account.mapbox.com/access-tokens/) avec les scopes nécessaires pour l’API Geocoding.
 - Bucket expected for attachments: `request-attachments`
 - Private files are accessed via signed URLs
+
+### Confirmation email
+
+Pour que le lien « Confirmer mon email » ouvre la page dédiée après confirmation :
+
+1. **Supabase** → Authentication → URL Configuration : ajouter dans **Redirect URLs** l’URL `https://votre-domaine/auth/confirm` (et en dev `http://localhost:3000/auth/confirm`).
+2. **Supabase** → Authentication → Email Templates → **Confirm signup** : remplacer le lien par  
+   `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`  
+   (par ex. dans le template :  
+   `<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">Confirmer mon email</a>`).

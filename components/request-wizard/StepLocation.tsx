@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { MapboxAddressInput, type MapboxAddressValue } from "@/components/address/MapboxAddressInput"
 import { inputClass, labelClass, type WizardDetails } from "./wizard-fields"
 
 const PARKING_DISTANCE = [
@@ -17,35 +18,51 @@ type StepLocationProps = {
   street: string
   postalCode: string
   city: string
+  addressLat?: number | null
+  addressLng?: number | null
   preferredDates: string[]
   accessNotes: string
   details: WizardDetails
   onStreetChange: (v: string) => void
   onPostalCodeChange: (v: string) => void
   onCityChange: (v: string) => void
+  onAddressSelect?: (v: MapboxAddressValue) => void
   onPreferredDatesChange: (v: string[]) => void
   onAccessNotesChange: (v: string) => void
   onDetailsChange: (d: WizardDetails) => void
   /** Afficher le bloc "Dates de RDV souhaitées". À false pour l’étape Lieu quand les dates sont en étape Dispo (ex. débarras). */
   showPreferredDates?: boolean
+  /** Masquer étage, ascenseur, distance parking (ex. Jardin / extérieur). */
+  hideFloorAndAccess?: boolean
 }
 
 export function StepLocation({
   street,
   postalCode,
   city,
+  addressLat,
+  addressLng,
   preferredDates,
   accessNotes,
   details,
   onStreetChange,
   onPostalCodeChange,
   onCityChange,
+  onAddressSelect,
   onPreferredDatesChange,
   onAccessNotesChange,
   onDetailsChange,
   showPreferredDates = true,
+  hideFloorAndAccess = false,
 }: StepLocationProps) {
   const [dateToAdd, setDateToAdd] = useState("")
+  const addressValue: MapboxAddressValue = {
+    street,
+    postal_code: postalCode,
+    city,
+    lat: addressLat ?? null,
+    lng: addressLng ?? null,
+  }
 
   const addDate = () => {
     if (!dateToAdd.trim()) return
@@ -67,33 +84,11 @@ export function StepLocation({
       </p>
 
       <label className={labelClass}>
-        Adresse (rue, n°)
-        <input
-          type="text"
-          value={street}
-          onChange={(e) => onStreetChange(e.target.value)}
-          placeholder="Ex. Avenue de la Gare 10"
-          className={inputClass}
-        />
-      </label>
-      <label className={labelClass}>
-        Code postal
-        <input
-          type="text"
-          value={postalCode}
-          onChange={(e) => onPostalCodeChange(e.target.value)}
-          placeholder="Ex. 1003"
-          maxLength={5}
-          className={inputClass}
-        />
-      </label>
-      <label className={labelClass}>
-        Ville
-        <input
-          type="text"
-          value={city}
-          onChange={(e) => onCityChange(e.target.value)}
-          placeholder="Ex. Lausanne"
+        Adresse
+        <MapboxAddressInput
+          value={addressValue}
+          onSelect={onAddressSelect}
+          placeholder="Rechercher une adresse…"
           className={inputClass}
         />
       </label>
@@ -142,41 +137,45 @@ export function StepLocation({
         </div>
       )}
 
-      <label className={labelClass}>
-        Étage (0 = RDC)
-        <input
-          type="number"
-          min={0}
-          value={(details.floors as number) ?? ""}
-          onChange={(e) => onDetailsChange(updateDetails(details, "floors", e.target.value === "" ? undefined : parseInt(e.target.value, 10)))}
-          className={inputClass}
-        />
-      </label>
-      <label className={labelClass}>
-        Ascenseur
-        <select
-          value={(details.has_elevator as string) ?? ""}
-          onChange={(e) => onDetailsChange(updateDetails(details, "has_elevator", e.target.value || undefined))}
-          className={inputClass}
-        >
-          <option value="">—</option>
-          <option value="yes">Oui</option>
-          <option value="no">Non</option>
-        </select>
-      </label>
-      <label className={labelClass}>
-        Distance parking
-        <select
-          value={(details.parking_distance as string) ?? ""}
-          onChange={(e) => onDetailsChange(updateDetails(details, "parking_distance", e.target.value))}
-          className={inputClass}
-        >
-          <option value="">—</option>
-          {PARKING_DISTANCE.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-      </label>
+      {!hideFloorAndAccess && (
+        <>
+          <label className={labelClass}>
+            Étage (0 = RDC)
+            <input
+              type="number"
+              min={0}
+              value={(details.floors as number) ?? ""}
+              onChange={(e) => onDetailsChange(updateDetails(details, "floors", e.target.value === "" ? undefined : parseInt(e.target.value, 10)))}
+              className={inputClass}
+            />
+          </label>
+          <label className={labelClass}>
+            Ascenseur
+            <select
+              value={(details.has_elevator as string) ?? ""}
+              onChange={(e) => onDetailsChange(updateDetails(details, "has_elevator", e.target.value || undefined))}
+              className={inputClass}
+            >
+              <option value="">—</option>
+              <option value="yes">Oui</option>
+              <option value="no">Non</option>
+            </select>
+          </label>
+          <label className={labelClass}>
+            Distance parking
+            <select
+              value={(details.parking_distance as string) ?? ""}
+              onChange={(e) => onDetailsChange(updateDetails(details, "parking_distance", e.target.value))}
+              className={inputClass}
+            >
+              <option value="">—</option>
+              {PARKING_DISTANCE.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </label>
+        </>
+      )}
 
       <label className={labelClass}>
         Notes d&apos;accès (code d&apos;entrée, digicode, etc.)

@@ -16,7 +16,7 @@ export function RecentRequestsList({ requests }: RecentRequestsListProps) {
   return (
     <section aria-labelledby="recent-requests-title">
       <h2 id="recent-requests-title" className="mb-3 text-lg font-semibold text-dr-tri-dark">
-        Dernières demandes
+        Demandes en cours
       </h2>
       <ul className="grid gap-2" style={{ listStyle: "none", margin: 0, padding: 0 }}>
         {list.map((request) => (

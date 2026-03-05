@@ -1,11 +1,21 @@
 import { RequestWizard } from "@/components/request-wizard/RequestWizard"
+import { TransportWizard } from "@/components/request-wizard/TransportWizard"
+import { DebarrasWizard } from "@/components/request-wizard/DebarrasWizard"
+
+const VALID_TYPES = ["clearance", "transport", "moving", "recycling", "other"] as const
+type ValidType = (typeof VALID_TYPES)[number]
+
+function sanitizeType(raw?: string): ValidType | "" {
+  return VALID_TYPES.includes(raw as ValidType) ? (raw as ValidType) : ""
+}
 
 type NewRequestPageProps = {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; type?: string }>
 }
 
 export default async function NewRequestPage({ searchParams }: NewRequestPageProps) {
   const params = await searchParams
+  const initialType = sanitizeType(params.type)
   const errorMessage =
     params.error === "missing_required"
       ? "La description est obligatoire."
@@ -25,7 +35,13 @@ export default async function NewRequestPage({ searchParams }: NewRequestPagePro
         </p>
       )}
 
-      <RequestWizard />
+      {initialType === "transport" ? (
+        <TransportWizard />
+      ) : initialType === "clearance" ? (
+        <DebarrasWizard />
+      ) : (
+        <RequestWizard initialType={initialType} />
+      )}
     </main>
   )
 }

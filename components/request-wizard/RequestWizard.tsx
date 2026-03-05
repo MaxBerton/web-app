@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { ServicePicker } from "./ServicePicker"
 import { StepDetailsDebarras } from "./StepDetailsDebarras"
 import { StepDetailsTransport } from "./StepDetailsTransport"
 import { StepDetailsInstallation } from "./StepDetailsInstallation"
@@ -15,14 +14,20 @@ import type { WizardDetails } from "./wizard-fields"
 import { inputClass, labelClass } from "./wizard-fields"
 
 const MAX_ATTACHMENTS = 5
-type Step = 1 | 2 | 3 | 4 | 5
+type Step = 1 | 2 | 3 | 4
 
 const WIZARD_STEPS: { step: Step; label: string; shortLabel: string }[] = [
-  { step: 1, label: "Type de service", shortLabel: "Service" },
-  { step: 2, label: "Photos", shortLabel: "Photos" },
-  { step: 3, label: "Détails", shortLabel: "Détails" },
-  { step: 4, label: "Lieu", shortLabel: "Lieu" },
-  { step: 5, label: "Disponibilités", shortLabel: "Dispo" },
+  { step: 1, label: "Photos", shortLabel: "Photos" },
+  { step: 2, label: "Détails", shortLabel: "Détails" },
+  { step: 3, label: "Lieu", shortLabel: "Lieu" },
+  { step: 4, label: "Disponibilités", shortLabel: "Dispo" },
+]
+
+// Jardin & travaux : pas d'étape Photos (devis sur surface + fréquence, pas de photo)
+const WIZARD_STEPS_OTHER: { step: 1 | 2 | 3; label: string; shortLabel: string }[] = [
+  { step: 1, label: "Détails", shortLabel: "Détails" },
+  { step: 2, label: "Lieu", shortLabel: "Lieu" },
+  { step: 3, label: "Disponibilités", shortLabel: "Dispo" },
 ]
 
 const serviceToDetailsStep: Record<string, React.ComponentType<{ details: WizardDetails; onChange: (d: WizardDetails) => void }>> = {
@@ -33,7 +38,11 @@ const serviceToDetailsStep: Record<string, React.ComponentType<{ details: Wizard
   other: StepDetailsOther,
 }
 
-export function RequestWizard() {
+type RequestWizardProps = {
+  initialType?: string
+}
+
+export function RequestWizard({ initialType = "" }: RequestWizardProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const selectedFilesRef = useRef<File[]>([])
   const [step, setStep] = useState<Step>(1)
@@ -41,12 +50,14 @@ export function RequestWizard() {
   const [error, setError] = useState<string | null>(null)
 
   const [form, setForm] = useState({
-    type: "",
+    type: initialType,
     description: "",
     details: {} as WizardDetails,
     street: "",
     postal_code: "",
     city: "",
+    address_latitude: null as number | null,
+    address_longitude: null as number | null,
     preferred_dates: [] as string[],
     access_notes: "",
   })
@@ -56,10 +67,18 @@ export function RequestWizard() {
   const buildFormData = (): FormData => {
     const fd = new FormData()
     fd.set("type", form.type || "other")
-    fd.set("description", form.description)
+    // Pour type=other, générer la description depuis la catégorie + contraintes si description vide
+    const autoDescription = isOther && !form.description?.trim()
+      ? [form.details?.category as string, form.details?.constraints as string].filter(Boolean).join(" — ") || "Jardin & travaux"
+      : form.description
+    fd.set("description", autoDescription)
     fd.set("street", form.street)
     fd.set("postal_code", form.postal_code)
     fd.set("city", form.city)
+    if (form.address_latitude != null && form.address_longitude != null) {
+      fd.set("latitude", String(form.address_latitude))
+      fd.set("longitude", String(form.address_longitude))
+    }
     fd.set("requested_dates", JSON.stringify(form.preferred_dates))
     fd.set("access_constraints", form.access_notes)
     fd.set("details_json", JSON.stringify(form.details))
@@ -78,14 +97,9 @@ export function RequestWizard() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    if (!form.description?.trim()) {
+    if (!isOther && !form.description?.trim()) {
       setError("La description est obligatoire.")
-      setStep(3)
-      return
-    }
-    if (!form.type) {
-      setError("Veuillez choisir un type de service.")
-      setStep(1)
+      setStep(2)
       return
     }
     setIsSubmitting(true)
@@ -101,15 +115,24 @@ export function RequestWizard() {
     }
   }
 
+  const isOther = form.type === "other"
+  const currentSteps = isOther ? WIZARD_STEPS_OTHER : WIZARD_STEPS
+  const totalSteps = currentSteps.length
   const canNextStep1 = Boolean(form.type)
-  const canNextStep2 = Boolean(form.description?.trim())
+  const isLivraisonSimple =
+    form.type === "transport" && form.details?.transport_type === "livraison_simple"
+  const livraisonSimpleComplete =
+    (form.details?.livraison_simple_step as number) === 6
+  const canNextStep2 = isOther
+    ? Boolean((form.details?.category as string)?.trim())
+    : Boolean(form.description?.trim()) && (!isLivraisonSimple || livraisonSimpleComplete)
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-6">
       {/* Fil d'Ariane / Stepper */}
       <nav aria-label="Étapes de la demande" className="card py-4">
         <ol className="flex flex-wrap items-center justify-between gap-2 sm:gap-0" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {WIZARD_STEPS.map(({ step: s, label, shortLabel }, index) => {
+          {currentSteps.map(({ step: s, label, shortLabel }, index) => {
             const isCurrent = step === s
             const isPast = step > s
             const isClickable = isPast
@@ -127,7 +150,7 @@ export function RequestWizard() {
                 <span className="flex flex-col items-center gap-0.5 sm:flex-row sm:gap-2">
                   <button
                     type="button"
-                    onClick={() => isClickable && setStep(s)}
+                    onClick={() => isClickable && setStep(s as Step)}
                     disabled={!isClickable}
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
                       isCurrent
@@ -155,7 +178,7 @@ export function RequestWizard() {
           })}
         </ol>
         <p className="mt-2 text-center text-xs text-dr-tri-muted" aria-live="polite">
-          Étape {step} sur 5
+          Étape {step} sur {totalSteps}
         </p>
       </nav>
 
@@ -165,60 +188,42 @@ export function RequestWizard() {
         </p>
       )}
 
-      {/* Step 1 — Type de service */}
-      {step === 1 && (
+      {/* Step 1 — Photos (uniquement pour les types autres que Jardin & travaux) */}
+      {!isOther && step === 1 && (
         <section className="card grid gap-4" aria-labelledby="step1-heading">
-          <h2 id="step1-heading" className="text-lg font-semibold text-dr-tri-dark">Type de service</h2>
-          <ServicePicker
-            value={form.type}
-            onChange={(value) => setForm((f) => ({ ...f, type: value, details: {} }))}
-            required
-          />
-          <div className="flex justify-end">
-            <button type="button" className="btn" onClick={() => setStep(2)} disabled={!canNextStep1}>
-              Suivant
-            </button>
-          </div>
-        </section>
-      )}
-
-      {/* Step 2 — Photos */}
-      {step === 2 && (
-        <section className="card grid gap-4" aria-labelledby="step2-heading">
-          <h2 id="step2-heading" className="text-lg font-semibold text-dr-tri-dark">Photos (optionnel)</h2>
+          <h2 id="step1-heading" className="text-lg font-semibold text-dr-tri-dark">Photos (optionnel)</h2>
           <StepAttachments
             inputRef={fileInputRef}
             onFilesChange={(files) => {
               selectedFilesRef.current = files
             }}
           />
-          <div className="flex justify-between pt-2">
-            <button type="button" className="btn" onClick={() => setStep(1)}>
-              Précédent
-            </button>
-            <button type="button" className="btn" onClick={() => setStep(3)}>
+          <div className="flex justify-end pt-2">
+            <button type="button" className="btn" onClick={() => setStep(2)}>
               Suivant
             </button>
           </div>
         </section>
       )}
 
-      {/* Step 3 — Détails (description + détail service) */}
-      {step === 3 && (
-        <section className="card grid gap-4" aria-labelledby="step3-heading">
-          <h2 id="step3-heading" className="text-lg font-semibold text-dr-tri-dark">Détails</h2>
+      {/* Détails — Step 1 pour other, Step 2 pour les autres types */}
+      {(isOther && step === 1) || (!isOther && step === 2) ? (
+        <section className="card grid gap-4" aria-labelledby="step-details-heading">
+          <h2 id="step-details-heading" className="text-lg font-semibold text-dr-tri-dark">Détails</h2>
 
-          <label className={labelClass}>
-            Description <span className="text-red-500">*</span>
-            <textarea
-              required
-              rows={4}
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="Décrivez votre besoin..."
-              className={inputClass}
-            />
-          </label>
+          {!isOther && (
+            <label className={labelClass}>
+              Description <span className="text-red-500">*</span>
+              <textarea
+                required
+                rows={4}
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Décrivez votre besoin..."
+                className={inputClass}
+              />
+            </label>
+          )}
 
           {DetailsStepComponent && (
             <DetailsStepComponent
@@ -228,80 +233,99 @@ export function RequestWizard() {
           )}
 
           <div className="flex justify-between pt-2">
-            <button type="button" className="btn" onClick={() => setStep(2)}>
-              Précédent
-            </button>
-            <button type="button" className="btn" onClick={() => setStep(4)} disabled={!canNextStep2}>
+            {!isOther ? (
+              <button type="button" className="btn" onClick={() => setStep(1)}>
+                Précédent
+              </button>
+            ) : (
+              <span />
+            )}
+            <button type="button" className="btn" onClick={() => setStep(isOther ? 2 : 3)} disabled={!canNextStep2}>
               Suivant
             </button>
           </div>
         </section>
-      )}
+      ) : null}
 
-      {/* Step 4 — Lieu (adresse + accès, sans dates pour garder dispo en étape 5) */}
-      {step === 4 && (
-        <section className="card grid gap-4" aria-labelledby="step4-heading">
-          <h2 id="step4-heading" className="text-lg font-semibold text-dr-tri-dark">Lieu</h2>
+      {/* Lieu — Step 2 pour other, Step 3 pour les autres types */}
+      {(isOther && step === 2) || (!isOther && step === 3) ? (
+        <section className="card grid gap-4" aria-labelledby="step-lieu-heading">
+          <h2 id="step-lieu-heading" className="text-lg font-semibold text-dr-tri-dark">Lieu</h2>
           <StepLocation
             street={form.street}
             postalCode={form.postal_code}
             city={form.city}
+            addressLat={form.address_latitude}
+            addressLng={form.address_longitude}
             preferredDates={form.preferred_dates}
             accessNotes={form.access_notes}
             details={form.details}
             onStreetChange={(v) => setForm((f) => ({ ...f, street: v }))}
             onPostalCodeChange={(v) => setForm((f) => ({ ...f, postal_code: v }))}
             onCityChange={(v) => setForm((f) => ({ ...f, city: v }))}
+            onAddressSelect={(v) =>
+              setForm((f) => ({
+                ...f,
+                street: v.street,
+                postal_code: v.postal_code,
+                city: v.city,
+                address_latitude: v.lat,
+                address_longitude: v.lng,
+              }))
+            }
             onPreferredDatesChange={(v) => setForm((f) => ({ ...f, preferred_dates: v }))}
             onAccessNotesChange={(v) => setForm((f) => ({ ...f, access_notes: v }))}
             onDetailsChange={(d) => setForm((f) => ({ ...f, details: d }))}
             showPreferredDates={false}
+            hideFloorAndAccess={isOther && (form.details?.category as string) === "jardin"}
           />
           <div className="flex justify-between pt-2">
-            <button type="button" className="btn" onClick={() => setStep(3)}>
+            <button type="button" className="btn" onClick={() => setStep(isOther ? 1 : 2)}>
               Précédent
             </button>
-            <button type="button" className="btn" onClick={() => setStep(5)}>
+            <button type="button" className="btn" onClick={() => setStep(isOther ? 3 : 4)}>
               Suivant
             </button>
           </div>
         </section>
-      )}
+      ) : null}
 
-      {/* Step 5 — Dispo (demande de passage) + Envoyer la demande */}
-      {step === 5 && (
-        <section className="card grid gap-4" aria-labelledby="step5-heading">
-          <h2 id="step5-heading" className="text-lg font-semibold text-dr-tri-dark">Disponibilités (demande de passage)</h2>
+      {/* Disponibilités + Envoyer — Step 3 pour other, Step 4 pour les autres types */}
+      {(isOther && step === 3) || (!isOther && step === 4) ? (
+        <section className="card grid gap-4" aria-labelledby="step4-heading">
+          <h2 id="step4-heading" className="text-lg font-semibold text-dr-tri-dark">Disponibilités</h2>
           <StepPreferredDates
             preferredDates={form.preferred_dates}
             onPreferredDatesChange={(v) => setForm((f) => ({ ...f, preferred_dates: v }))}
           />
-          <label className={labelClass}>
-            Nombre de personnes pour la manutention (estimé)
-            <select
-              value={(form.details.needs_helpers as string) ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, details: { ...f.details, needs_helpers: e.target.value } }))}
-              className={inputClass}
-            >
-              <option value="">—</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3+">3+</option>
-            </select>
-          </label>
+          {!isOther && (
+            <label className={labelClass}>
+              Nombre de personnes pour la manutention (estimé)
+              <select
+                value={(form.details.needs_helpers as string) ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, details: { ...f.details, needs_helpers: e.target.value } }))}
+                className={inputClass}
+              >
+                <option value="">—</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3+">3+</option>
+              </select>
+            </label>
+          )}
           <p className="text-sm text-dr-tri-muted">
-            Vous allez recevoir un devis.
+            Une fois votre demande envoyée, vous recevrez un devis dans votre espace client. Vous pourrez également communiquer via un chat dédié.
           </p>
           <div className="flex justify-between pt-2">
-            <button type="button" className="btn" onClick={() => setStep(4)}>
+            <button type="button" className="btn" onClick={() => setStep(3)}>
               Précédent
             </button>
             <button type="submit" className="btn" disabled={isSubmitting}>
-              {isSubmitting ? "Envoi en cours…" : "Envoyer la demande de passage"}
+              {isSubmitting ? "Envoi en cours…" : "Envoyer ma demande"}
             </button>
           </div>
         </section>
-      )}
+      ) : null}
     </form>
   )
 }

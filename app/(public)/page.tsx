@@ -1,14 +1,43 @@
 import Link from "next/link"
+import Image from "next/image"
+import heroImage from "@/assets/hp-hero.webp"
+import debarrasImage from "@/assets/debarras-1.webp"
+import transportImage from "@/assets/transport-livraison-1.webp"
+import entretienTravauxImage from "@/assets/entretien-travaux.webp"
 
 const servicesData = [
   { id: "recyclage", title: "Recyclage à domicile", desc: "La déchetterie vient à vous. On récupère et remplace vos bacs.", href: "/services", anchor: "#recyclage" },
-  { id: "debarras", title: "Débarras", desc: "Garage, grenier, matériel lourd, meubles…", href: "/services/debarras", anchor: "" },
-  { id: "transport", title: "Transport & livraison", desc: "Transport sécurisé de marchandises, livraison sur demande.", href: "/services/demenagement", anchor: "" },
-  { id: "entretien", title: "Entretien / travaux", desc: "Jardin, petits travaux, bricolage et services divers.", href: "/services/installation", anchor: "" },
+  {
+    id: "debarras",
+    title: "Débarras & démolitions",
+    desc: "Garage, grenier, matériel lourd, meubles…",
+    href: "/services/debarras",
+    anchor: "",
+    image: debarrasImage,
+    imageAlt: "Intervention de débarras dans une pièce encombrée",
+  },
+  {
+    id: "transport",
+    title: "Déménagement & transport",
+    desc: "Déménagements, transport sécurisé de marchandises, livraison sur demande.",
+    href: "/services/demenagement",
+    anchor: "",
+    image: transportImage,
+    imageAlt: "Camion de transport stationné pour une livraison",
+  },
+  {
+    id: "entretien",
+    title: "Entretien & travaux",
+    desc: "Montage de meubles, entretien jardin, petits travaux, bricolage et services divers.",
+    href: "/services/installation",
+    anchor: "",
+    image: entretienTravauxImage,
+    imageAlt: "Intervention d'entretien extérieur dans un jardin",
+  },
 ]
 
 const howItWorksSteps = [
-  { title: "Vous faites votre demande", desc: "Formulaire en ligne ou contact direct." },
+  { title: "Vous faites votre demande", desc: "accédez à notre plateforme et envoyer directement votre demande." },
   { title: "On planifie l'intervention", desc: "Jour / créneau selon votre besoin." },
   { title: "On intervient", desc: "Transport, installation ou débarras, selon la demande." },
 ]
@@ -52,11 +81,17 @@ export default function HomePage() {
               </ul>
             </div>
             <figure className="hero-visual flex items-center justify-center" aria-label="Illustration du service">
-              <div
-                className="h-64 w-full max-w-md rounded-dr-tri-lg bg-white/10 md:h-80"
-                role="img"
-                aria-label="Camionnette Dr. Tri et intervention"
-              />
+              <span className="relative aspect-[3/4] w-full max-w-[280px] overflow-hidden rounded-dr-tri-lg md:max-w-[320px]">
+                <Image
+                  src={heroImage}
+                  alt="Camionnette Dr. Tri et intervention"
+                  className="object-cover"
+                  fill
+                  sizes="(max-width: 768px) 280px, 320px"
+                  priority
+                  unoptimized
+                />
+              </span>
               <figcaption className="sr-only">
                 Illustration d'une intervention Dr. Tri (transport, installation, débarras).
               </figcaption>
@@ -67,34 +102,51 @@ export default function HomePage() {
 
       {/* SERVICES */}
       <section id="services" className="py-16 md:py-20" aria-labelledby="services-title">
-        <div className="container-dr">
-          <header className="mb-10 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 id="services-title" className="section-title text-left">
-                Nos services
-              </h2>
-              <p className="mt-1 text-dr-tri-muted">Choisis le service, on s'occupe du reste.</p>
-            </div>
-            <Link className="link mt-2 shrink-0 sm:mt-0" href="/services" aria-label="Voir tous les services">
+        <div className="container-dr flex flex-col">
+          <header className="mb-10 flex flex-col gap-2">
+            <h2 id="services-title" className="section-title text-left">
+              Nos services
+            </h2>
+            <p className="mt-1 text-dr-tri-muted">Choisis le service, on s'occupe du reste.</p>
+            <Link className="link mt-2 shrink-0" href="/services" aria-label="Voir tous les services">
               Tout voir
             </Link>
           </header>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" role="list">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2" role="list">
             {servicesData.map((service) => (
               <article
                 key={service.id}
-                className="flex flex-col rounded-dr-tri-lg border border-dr-tri-border bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+                className="group flex flex-row items-stretch overflow-hidden rounded-dr-tri-lg border border-dr-tri-border bg-white shadow-sm transition-shadow hover:shadow-md"
                 role="listitem"
               >
-                <div className="mb-4 h-12 w-12 rounded-full bg-dr-tri-light-green" aria-hidden />
-                <h3 className="text-xl font-semibold text-dr-tri-dark">{service.title}</h3>
-                <p className="mt-2 flex-1 text-dr-tri-muted">{service.desc}</p>
-                <p className="mt-4">
-                  <Link className="link" href={service.anchor ? `${service.href}${service.anchor}` : service.href}>
-                    En savoir plus
-                  </Link>
-                </p>
+                <div className="relative w-[160px] shrink-0 self-stretch overflow-hidden sm:w-[200px] md:w-[240px] lg:w-[280px]">
+                  {"image" in service && service.image ? (
+                    <Image
+                      src={service.image}
+                      alt={service.imageAlt}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      sizes="(max-width: 640px) 160px, (max-width: 768px) 192px, 224px"
+                      quality={88}
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="h-full w-full rounded-l-dr-tri-lg bg-dr-tri-light-green" aria-hidden />
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col justify-center p-4 sm:p-5 md:p-6">
+                  <h3 className="text-lg font-semibold text-dr-tri-dark sm:text-xl md:text-2xl">{service.title}</h3>
+                  <p className="mt-1.5 flex-1 text-sm text-dr-tri-muted sm:mt-2 sm:text-base md:text-lg">{service.desc}</p>
+                  <p className="mt-3 sm:mt-4">
+                    <Link
+                      className="link text-dr-tri-muted hover:text-dr-tri-primary"
+                      href={service.anchor ? `${service.href}${service.anchor}` : service.href}
+                    >
+                      Voir ce service
+                    </Link>
+                  </p>
+                </div>
               </article>
             ))}
           </div>
@@ -122,14 +174,19 @@ export default function HomePage() {
             </Link>
           </header>
 
-          <ol className="grid gap-8 md:grid-cols-3" aria-label="Étapes du service" role="list">
+          <ol className="grid gap-6 md:grid-cols-3 md:gap-8" aria-label="Étapes du service" role="list">
             {howItWorksSteps.map((step, index) => (
-              <li key={index} className="flex flex-col items-center text-center md:items-start md:text-left">
-                <div
-                  className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-dr-tri-primary text-lg font-bold text-white"
-                  aria-hidden
-                >
-                  {index + 1}
+              <li
+                key={index}
+                className="flex h-full flex-col p-6 text-center md:text-left"
+              >
+                <div className="mb-4 flex items-center justify-center md:justify-start">
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-dr-tri-primary text-lg font-bold text-white"
+                    aria-hidden
+                  >
+                    {index + 1}
+                  </div>
                 </div>
                 <h3 className="text-xl font-semibold text-dr-tri-dark">{step.title}</h3>
                 <p className="mt-2 text-dr-tri-muted">{step.desc}</p>
@@ -181,10 +238,8 @@ export default function HomePage() {
               role="listitem"
               aria-label="Intervention ponctuelle"
             >
-              <h3 className="text-lg font-semibold text-dr-tri-dark">Intervention ponctuelle</h3>
-              <p className="mt-3 text-xl font-bold text-dr-tri-dark">
-                <strong>Devis gratuit</strong>
-              </p>
+              <p className="text-sm text-dr-tri-muted">Devis gratuit</p>
+              <h3 className="mt-1 text-xl font-semibold text-dr-tri-dark">Intervention ponctuelle</h3>
               <ul className="mt-4 flex-1 space-y-2 text-dr-tri-muted">
                 <li>Débarras (cave, grenier, garage, appartement…)</li>
                 <li>Transport & livraison (marchandises, mobilier…)</li>
@@ -206,10 +261,8 @@ export default function HomePage() {
               role="listitem"
               aria-label="Abonnement recyclage"
             >
-              <h3 className="text-lg font-semibold text-dr-tri-dark">Abonnement recyclage</h3>
-              <p className="mt-3 text-xl font-bold text-dr-tri-dark">
-                <strong>Dès 20 CHF</strong> <span className="text-base font-normal text-dr-tri-muted">/ mois</span>
-              </p>
+              <p className="text-sm text-dr-tri-muted">Dès 20 CHF / mois</p>
+              <h3 className="mt-1 text-xl font-semibold text-dr-tri-dark">Abonnement recyclage</h3>
               <ul className="mt-4 flex-1 space-y-2 text-dr-tri-muted">
                 <li>1 à 4 passages par mois</li>
                 <li>Échange des bacs (propres / désinfectés)</li>
@@ -230,10 +283,8 @@ export default function HomePage() {
               role="listitem"
               aria-label="Devis sur mesure"
             >
-              <h3 className="text-lg font-semibold text-dr-tri-dark">Devis sur mesure</h3>
-              <p className="mt-3 text-xl font-bold text-dr-tri-dark">
-                <strong>Pro / régulier</strong>
-              </p>
+              <p className="text-sm text-dr-tri-muted">Pro / régulier</p>
+              <h3 className="mt-1 text-xl font-semibold text-dr-tri-dark">Devis sur mesure</h3>
               <ul className="mt-4 flex-1 space-y-2 text-dr-tri-muted">
                 <li>Demandes récurrentes</li>
                 <li>Multi-sites / volume</li>

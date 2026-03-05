@@ -15,6 +15,11 @@ export async function createRequestAction(formData: FormData) {
   const street = getFormString(formData, "street")
   const postalCode = getFormString(formData, "postal_code")
   const city = getFormString(formData, "city")
+  const latRaw = getFormString(formData, "latitude")
+  const lngRaw = getFormString(formData, "longitude")
+  const latitude = latRaw ? parseFloat(latRaw) : null
+  const longitude = lngRaw ? parseFloat(lngRaw) : null
+  const hasCoords = latitude != null && !Number.isNaN(latitude) && longitude != null && !Number.isNaN(longitude)
   const requestedDatesJson = getFormString(formData, "requested_dates")
   let requestedDates: string[] = []
   if (requestedDatesJson?.trim()) {
@@ -67,6 +72,7 @@ export async function createRequestAction(formData: FormData) {
         postal_code: postalCode?.trim() || null,
         city: city.trim(),
         country: "CH",
+        ...(hasCoords ? { latitude, longitude } : {}),
       })
       .select("id")
       .single()
