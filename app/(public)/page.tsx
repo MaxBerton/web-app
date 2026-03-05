@@ -58,9 +58,6 @@ export default function HomePage() {
         <div className="container-dr">
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-16">
             <div className="hero-copy">
-              <p className="mb-4 text-sm font-medium uppercase tracking-wide text-white/80 md:text-base">
-                Service local • Intervention rapide • Devis sur demande
-              </p>
               <h1 id="hero-title" className="text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl">
                 On transporte, on installe, on débarrasse.
               </h1>
