@@ -55,7 +55,7 @@ export default function ServicesPage() {
       {/* INTRO */}
       <section id="services-intro" className="border-b border-dr-tri-border bg-white py-12 md:py-16">
         <div className="container-dr">
-          <p className="max-w-3xl text-center text-lg text-dr-tri-muted md:text-xl">
+          <p className="mx-auto max-w-3xl text-center text-lg text-dr-tri-muted md:text-xl">
             Notre objectif est simple : vous faire gagner du temps. Nous intervenons pour transporter, installer ou débarrasser ce dont vous n&apos;avez plus besoin.
           </p>
         </div>
