@@ -85,7 +85,7 @@ export default function AProposPage() {
           <p className="mt-4 max-w-3xl text-dr-tri-muted">
             Une équipe terrain, organisée et réactive, dédiée à des prestations logistiques fiables et simples à déclencher.
           </p>
-          <figure className="mt-10 flex flex-col items-center gap-6 rounded-dr-tri-lg border border-dr-tri-border bg-dr-tri-light-green/40 px-6 py-8 md:flex-row md:items-start md:gap-8 md:px-10 md:py-10">
+          <figure className="mt-10 flex flex-col items-center gap-6 rounded-dr-tri-lg border border-dr-tri-border bg-dr-tri-light-green/40 px-6 py-8 md:flex-row md:items-center md:gap-8 md:px-10 md:py-10">
             <div className="relative h-48 w-48 shrink-0 overflow-hidden rounded-full md:h-56 md:w-56">
               <Image
                 src={axelImage}
