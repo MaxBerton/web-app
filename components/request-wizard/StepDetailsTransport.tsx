@@ -1,6 +1,5 @@
 "use client"
 
-import { MapboxAddressInput, type MapboxAddressValue } from "@/components/address/MapboxAddressInput"
 import { inputClass, labelClass, type WizardDetails } from "./wizard-fields"
 
 const TRANSPORT_TYPES = [
@@ -185,26 +184,11 @@ export function StepDetailsTransport({ details, onChange }: Props) {
             </legend>
             <label className={labelClass}>
               Adresse
-              <MapboxAddressInput
-                value={{
-                  street: (details.adresse_recup_street as string) ?? "",
-                  postal_code: (details.adresse_recup_cp as string) ?? "",
-                  city: (details.adresse_recup_ville as string) ?? "",
-                  lat: (details.adresse_recup_lat as number) ?? null,
-                  lng: (details.adresse_recup_lng as number) ?? null,
-                }}
-                onSelect={(v) => {
-                  const line = [v.street, v.postal_code, v.city].filter(Boolean).join(", ")
-                  const next = update(update(update(update(update(
-                    update(details, "adresse_recup", line),
-                    "adresse_recup_street", v.street),
-                    "adresse_recup_cp", v.postal_code),
-                    "adresse_recup_ville", v.city),
-                    "adresse_recup_lat", v.lat),
-                    "adresse_recup_lng", v.lng)
-                  onChange(next)
-                }}
-                placeholder="Rechercher une adresse…"
+              <input
+                type="text"
+                value={(details.adresse_recup as string) ?? ""}
+                onChange={(e) => onChange(update(details, "adresse_recup", e.target.value))}
+                placeholder="Rue, n°, code postal, ville"
                 className={inputClass}
               />
             </label>
@@ -276,26 +260,11 @@ export function StepDetailsTransport({ details, onChange }: Props) {
             </legend>
             <label className={labelClass}>
               Adresse
-              <MapboxAddressInput
-                value={{
-                  street: (details.adresse_livraison_street as string) ?? "",
-                  postal_code: (details.adresse_livraison_cp as string) ?? "",
-                  city: (details.adresse_livraison_ville as string) ?? "",
-                  lat: (details.adresse_livraison_lat as number) ?? null,
-                  lng: (details.adresse_livraison_lng as number) ?? null,
-                }}
-                onSelect={(v) => {
-                  const line = [v.street, v.postal_code, v.city].filter(Boolean).join(", ")
-                  const next = update(update(update(update(update(
-                    update(details, "adresse_livraison", line),
-                    "adresse_livraison_street", v.street),
-                    "adresse_livraison_cp", v.postal_code),
-                    "adresse_livraison_ville", v.city),
-                    "adresse_livraison_lat", v.lat),
-                    "adresse_livraison_lng", v.lng)
-                  onChange(next)
-                }}
-                placeholder="Rechercher une adresse…"
+              <input
+                type="text"
+                value={(details.adresse_livraison as string) ?? ""}
+                onChange={(e) => onChange(update(details, "adresse_livraison", e.target.value))}
+                placeholder="Rue, n°, code postal, ville"
                 className={inputClass}
               />
             </label>

@@ -56,8 +56,6 @@ export function RequestWizard({ initialType = "" }: RequestWizardProps) {
     street: "",
     postal_code: "",
     city: "",
-    address_latitude: null as number | null,
-    address_longitude: null as number | null,
     preferred_dates: [] as string[],
     access_notes: "",
   })
@@ -75,10 +73,6 @@ export function RequestWizard({ initialType = "" }: RequestWizardProps) {
     fd.set("street", form.street)
     fd.set("postal_code", form.postal_code)
     fd.set("city", form.city)
-    if (form.address_latitude != null && form.address_longitude != null) {
-      fd.set("latitude", String(form.address_latitude))
-      fd.set("longitude", String(form.address_longitude))
-    }
     fd.set("requested_dates", JSON.stringify(form.preferred_dates))
     fd.set("access_constraints", form.access_notes)
     fd.set("details_json", JSON.stringify(form.details))
@@ -255,24 +249,12 @@ export function RequestWizard({ initialType = "" }: RequestWizardProps) {
             street={form.street}
             postalCode={form.postal_code}
             city={form.city}
-            addressLat={form.address_latitude}
-            addressLng={form.address_longitude}
             preferredDates={form.preferred_dates}
             accessNotes={form.access_notes}
             details={form.details}
             onStreetChange={(v) => setForm((f) => ({ ...f, street: v }))}
             onPostalCodeChange={(v) => setForm((f) => ({ ...f, postal_code: v }))}
             onCityChange={(v) => setForm((f) => ({ ...f, city: v }))}
-            onAddressSelect={(v) =>
-              setForm((f) => ({
-                ...f,
-                street: v.street,
-                postal_code: v.postal_code,
-                city: v.city,
-                address_latitude: v.lat,
-                address_longitude: v.lng,
-              }))
-            }
             onPreferredDatesChange={(v) => setForm((f) => ({ ...f, preferred_dates: v }))}
             onAccessNotesChange={(v) => setForm((f) => ({ ...f, access_notes: v }))}
             onDetailsChange={(d) => setForm((f) => ({ ...f, details: d }))}

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { MapboxAddressInput, type MapboxAddressValue } from "@/components/address/MapboxAddressInput"
 import { inputClass, labelClass } from "./wizard-fields"
 import { createRequestAction } from "@/app/(app)/app/demandes/actions"
 
@@ -162,8 +161,6 @@ type AddressBlock = {
   adresse: string
   cp: string
   ville: string
-  lat: number | null
-  lng: number | null
   etage: string
   ascenseur: string
   distance_parking: string
@@ -172,8 +169,8 @@ type AddressBlock = {
 }
 
 const EMPTY_ADDRESS: AddressBlock = {
-  adresse: "", cp: "", ville: "", lat: null, lng: null,
-  etage: "", ascenseur: "", distance_parking: "", acces_camion: "", notes: "",
+  adresse: "", cp: "", ville: "", etage: "",
+  ascenseur: "", distance_parking: "", acces_camion: "", notes: "",
 }
 
 type TransportForm = {
@@ -281,29 +278,23 @@ function AddressForm({
   creneauValue?: string
   onCreneauChange?: (v: string) => void
 }) {
-  const set = (key: keyof AddressBlock, v: string | number | null) => onChange({ ...value, [key]: v })
+  const set = (key: keyof AddressBlock, v: string) => onChange({ ...value, [key]: v })
   return (
     <div className="grid gap-4">
-      <Field label="Adresse *">
-        <MapboxAddressInput
-          value={{
-            street: value.adresse,
-            postal_code: value.cp,
-            city: value.ville,
-            lat: value.lat,
-            lng: value.lng,
-          }}
-          onSelect={(v: MapboxAddressValue) => {
-            set("adresse", v.street)
-            set("cp", v.postal_code)
-            set("ville", v.city)
-            set("lat", v.lat)
-            set("lng", v.lng)
-          }}
-          placeholder="Rechercher une adresse…"
-          className={inputClass}
-        />
+      <Field label="Adresse (rue, n°) *">
+        <input type="text" value={value.adresse} onChange={(e) => set("adresse", e.target.value)}
+          placeholder="Ex. Avenue de la Gare 10" className={inputClass} />
       </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Code postal *">
+          <input type="text" value={value.cp} onChange={(e) => set("cp", e.target.value)}
+            placeholder="Ex. 1003" maxLength={5} className={inputClass} />
+        </Field>
+        <Field label="Ville *">
+          <input type="text" value={value.ville} onChange={(e) => set("ville", e.target.value)}
+            placeholder="Ex. Lausanne" className={inputClass} />
+        </Field>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Étage">
           <input type="text" value={value.etage} onChange={(e) => set("etage", e.target.value)}
@@ -441,10 +432,6 @@ export function TransportWizard() {
       fd.set("street", form.depot.adresse)
       fd.set("postal_code", form.depot.cp)
       fd.set("city", form.depot.ville)
-      if (form.depot.lat != null && form.depot.lng != null) {
-        fd.set("latitude", String(form.depot.lat))
-        fd.set("longitude", String(form.depot.lng))
-      }
       const dates = [form.date_souhaitee, isDemenagement ? form.date_arrivee : ""].filter(Boolean)
       fd.set("requested_dates", dates.length ? JSON.stringify(dates) : "[]")
 

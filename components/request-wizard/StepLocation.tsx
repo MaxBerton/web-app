@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { MapboxAddressInput, type MapboxAddressValue } from "@/components/address/MapboxAddressInput"
 import { inputClass, labelClass, type WizardDetails } from "./wizard-fields"
 
 const PARKING_DISTANCE = [
@@ -18,15 +17,12 @@ type StepLocationProps = {
   street: string
   postalCode: string
   city: string
-  addressLat?: number | null
-  addressLng?: number | null
   preferredDates: string[]
   accessNotes: string
   details: WizardDetails
   onStreetChange: (v: string) => void
   onPostalCodeChange: (v: string) => void
   onCityChange: (v: string) => void
-  onAddressSelect?: (v: MapboxAddressValue) => void
   onPreferredDatesChange: (v: string[]) => void
   onAccessNotesChange: (v: string) => void
   onDetailsChange: (d: WizardDetails) => void
@@ -40,15 +36,12 @@ export function StepLocation({
   street,
   postalCode,
   city,
-  addressLat,
-  addressLng,
   preferredDates,
   accessNotes,
   details,
   onStreetChange,
   onPostalCodeChange,
   onCityChange,
-  onAddressSelect,
   onPreferredDatesChange,
   onAccessNotesChange,
   onDetailsChange,
@@ -56,13 +49,6 @@ export function StepLocation({
   hideFloorAndAccess = false,
 }: StepLocationProps) {
   const [dateToAdd, setDateToAdd] = useState("")
-  const addressValue: MapboxAddressValue = {
-    street,
-    postal_code: postalCode,
-    city,
-    lat: addressLat ?? null,
-    lng: addressLng ?? null,
-  }
 
   const addDate = () => {
     if (!dateToAdd.trim()) return
@@ -84,11 +70,33 @@ export function StepLocation({
       </p>
 
       <label className={labelClass}>
-        Adresse
-        <MapboxAddressInput
-          value={addressValue}
-          onSelect={onAddressSelect}
-          placeholder="Rechercher une adresse…"
+        Adresse (rue, n°)
+        <input
+          type="text"
+          value={street}
+          onChange={(e) => onStreetChange(e.target.value)}
+          placeholder="Ex. Avenue de la Gare 10"
+          className={inputClass}
+        />
+      </label>
+      <label className={labelClass}>
+        Code postal
+        <input
+          type="text"
+          value={postalCode}
+          onChange={(e) => onPostalCodeChange(e.target.value)}
+          placeholder="Ex. 1003"
+          maxLength={5}
+          className={inputClass}
+        />
+      </label>
+      <label className={labelClass}>
+        Ville
+        <input
+          type="text"
+          value={city}
+          onChange={(e) => onCityChange(e.target.value)}
+          placeholder="Ex. Lausanne"
           className={inputClass}
         />
       </label>

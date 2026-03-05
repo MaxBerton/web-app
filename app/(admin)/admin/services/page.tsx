@@ -1,4 +1,3 @@
-import { DepotAddressField } from "@/components/admin/DepotAddressField"
 import { getPricingConfig } from "@/lib/pricing"
 import { getRecyclingPricingConfig } from "@/lib/recycling"
 import { savePricingConfigAction, saveRecyclingPricingAction } from "./actions"
@@ -26,10 +25,13 @@ export default async function AdminServicesPage() {
           <label className="grid gap-1.5">
             <span className="admin-field-label">Adresse dépôt (départ)</span>
             <span className="admin-field-hint">Point de départ pour le calcul des distances</span>
-            <DepotAddressField
+            <input
+              name="depot_address"
+              type="text"
+              className="admin-input"
               defaultValue={config.depotAddress}
-              defaultLat={config.depotLat}
-              defaultLng={config.depotLng}
+              required
+              placeholder="Ex. Lausanne, Suisse"
             />
           </label>
           <div className="grid gap-5 sm:grid-cols-2">

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { MapboxAddressInput, type MapboxAddressValue } from "@/components/address/MapboxAddressInput"
 import { inputClass, labelClass } from "./wizard-fields"
 import { createRequestAction } from "@/app/(app)/app/demandes/actions"
 
@@ -76,8 +75,6 @@ type AccessBlock = {
   adresse: string
   cp: string
   ville: string
-  lat: number | null
-  lng: number | null
   etage: string
   ascenseur: string
   distance_parking: string
@@ -86,8 +83,8 @@ type AccessBlock = {
 }
 
 const EMPTY_ACCESS: AccessBlock = {
-  adresse: "", cp: "", ville: "", lat: null, lng: null,
-  etage: "", ascenseur: "", distance_parking: "", acces_camion: "", notes: "",
+  adresse: "", cp: "", ville: "", etage: "",
+  ascenseur: "", distance_parking: "", acces_camion: "", notes: "",
 }
 
 type DebarrasForm = {
@@ -200,7 +197,7 @@ export function DebarrasWizard() {
   const set = <K extends keyof DebarrasForm>(key: K, value: DebarrasForm[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
 
-  const setAccess = (key: keyof AccessBlock, value: string | number | null) =>
+  const setAccess = (key: keyof AccessBlock, value: string) =>
     setForm((f) => ({ ...f, acces: { ...f.acces, [key]: value } }))
 
   const toggleItemType = (value: string) => {
@@ -236,10 +233,6 @@ export function DebarrasWizard() {
       fd.set("street", form.acces.adresse)
       fd.set("postal_code", form.acces.cp)
       fd.set("city", form.acces.ville)
-      if (form.acces.lat != null && form.acces.lng != null) {
-        fd.set("latitude", String(form.acces.lat))
-        fd.set("longitude", String(form.acces.lng))
-      }
       fd.set("requested_dates", form.date_souhaitee ? JSON.stringify([form.date_souhaitee]) : "[]")
       fd.set("details_json", JSON.stringify({
         space_type: form.space_type || undefined,
@@ -355,26 +348,20 @@ export function DebarrasWizard() {
             </p>
           </div>
 
-          <Field label="Adresse *">
-            <MapboxAddressInput
-              value={{
-                street: form.acces.adresse,
-                postal_code: form.acces.cp,
-                city: form.acces.ville,
-                lat: form.acces.lat,
-                lng: form.acces.lng,
-              }}
-              onSelect={(v) => {
-                setAccess("adresse", v.street)
-                setAccess("cp", v.postal_code)
-                setAccess("ville", v.city)
-                setAccess("lat", v.lat)
-                setAccess("lng", v.lng)
-              }}
-              placeholder="Rechercher une adresse…"
-              className={inputClass}
-            />
+          <Field label="Adresse (rue, n°) *">
+            <input type="text" value={form.acces.adresse} onChange={(e) => setAccess("adresse", e.target.value)}
+              placeholder="Ex. Avenue de la Gare 10" className={inputClass} />
           </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Code postal *">
+              <input type="text" value={form.acces.cp} onChange={(e) => setAccess("cp", e.target.value)}
+                placeholder="Ex. 1003" maxLength={5} className={inputClass} />
+            </Field>
+            <Field label="Ville *">
+              <input type="text" value={form.acces.ville} onChange={(e) => setAccess("ville", e.target.value)}
+                placeholder="Ex. Lausanne" className={inputClass} />
+            </Field>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Étage">
               <input type="text" value={form.acces.etage} onChange={(e) => setAccess("etage", e.target.value)}
