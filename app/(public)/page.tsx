@@ -4,9 +4,10 @@ import heroImage from "@/assets/hp-hero.webp"
 import debarrasImage from "@/assets/debarras-1.webp"
 import transportImage from "@/assets/transport-livraison-1.webp"
 import entretienTravauxImage from "@/assets/entretien-travaux.webp"
+import recyclageImage from "@/assets/recyclage.webp"
 
 const servicesData = [
-  { id: "recyclage", title: "Recyclage à domicile", desc: "La déchetterie vient à vous. On récupère et remplace vos bacs.", href: "/services", anchor: "#recyclage" },
+  { id: "recyclage", title: "Recyclage à domicile", desc: "La déchetterie vient à vous. On récupère et remplace vos bacs.", href: "/services", anchor: "#recyclage", image: recyclageImage, imageAlt: "Bacs de recyclage à domicile" },
   {
     id: "debarras",
     title: "Débarras & démolitions",
