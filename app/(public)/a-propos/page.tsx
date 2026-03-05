@@ -1,4 +1,6 @@
 import Link from "next/link"
+import Image from "next/image"
+import axelImage from "@/assets/Axel-dr-tri.webp"
 
 const values = [
   { title: "Efficacité", description: "Une organisation simple, des interventions nettes, sans perte de temps." },
@@ -83,15 +85,26 @@ export default function AProposPage() {
           <p className="mt-4 max-w-3xl text-dr-tri-muted">
             Une équipe terrain, organisée et réactive, dédiée à des prestations logistiques fiables et simples à déclencher.
           </p>
-          <figure className="mt-10 rounded-dr-tri-lg border border-dr-tri-border bg-dr-tri-light-green/40 px-6 py-8 md:px-10 md:py-10">
-            <blockquote className="m-0">
-              <p className="text-lg italic text-dr-tri-dark md:text-xl">
-                « Notre objectif : que chaque intervention soit simple, rapide, et bien faite. »
-              </p>
-            </blockquote>
-            <figcaption className="mt-4 font-semibold text-dr-tri-dark">
-              Axel Jenny, fondateur de Dr. Tri
-            </figcaption>
+          <figure className="mt-10 flex flex-col items-center gap-6 rounded-dr-tri-lg border border-dr-tri-border bg-dr-tri-light-green/40 px-6 py-8 md:flex-row md:items-start md:gap-8 md:px-10 md:py-10">
+            <div className="relative h-48 w-48 shrink-0 overflow-hidden rounded-full md:h-56 md:w-56">
+              <Image
+                src={axelImage}
+                alt="Axel Jenny, fondateur de Dr. Tri"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 192px, 224px"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <blockquote className="m-0">
+                <p className="text-lg italic text-dr-tri-dark md:text-xl">
+                  « Notre objectif : que chaque intervention soit simple, rapide, et bien faite. »
+                </p>
+              </blockquote>
+              <figcaption className="mt-4 font-semibold text-dr-tri-dark">
+                Axel Jenny, fondateur de Dr. Tri
+              </figcaption>
+            </div>
           </figure>
         </div>
       </section>
