@@ -10,6 +10,8 @@ export type PricingConfig = {
 
 const DEFAULT_CONFIG: PricingConfig = {
   depotAddress: "Lausanne, Suisse",
+  depotLat: null,
+  depotLng: null,
   employeeHourlyRate: 60,
   kilometerRate: 2.2,
 }
